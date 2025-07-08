@@ -1,4 +1,5 @@
 #!/bin/bash
+
 source /venv/main/bin/activate
 COMFYUI_DIR=${WORKSPACE}/ComfyUI
 # Packages are installed after nodes so we can fix them...
@@ -20,6 +21,7 @@ NODES=(
     "https://github.com/Smirnov75/ComfyUI-mxToolkit"
     "https://github.com/facok/ComfyUI-HunyuanVideoMultiLora"
     "https://github.com/rgthree/rgthree-comfy"
+    "https://github.com/yolain/ComfyUI-Easy-Use"
     "https://github.com/Fannovel16/ComfyUI-Frame-Interpolation"
     "https://github.com/WASasquatch/was-node-suite-comfyui"
     "https://github.com/kijai/ComfyUI-Florence2"
