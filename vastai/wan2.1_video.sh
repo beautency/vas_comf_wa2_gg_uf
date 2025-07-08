@@ -41,7 +41,7 @@ CHECKPOINT_MODELS=(
 )
 
 CLIP_MODELS=(
-    "https://huggingface.co/UmeAiRT/ComfyUI-Auto_installer/blob/main/models/clip/umt5-xxl-encoder-Q8_0.gguf"
+    "https://huggingface.co/UmeAiRT/ComfyUI-Auto_installer/resolve/main/models/clip/umt5-xxl-encoder-Q8_0.gguf"
 )
 
 UNET_MODELS=(
@@ -61,7 +61,7 @@ CONTROLNET_MODELS=(
 )
 
 DIFFUSION_MODELS=(
-    "https://huggingface.co/UmeAiRT/ComfyUI-Auto_installer/blob/main/models/unet/WAN/wan2.1-i2v-14b-720p-Q8_0.gguf"
+    "https://huggingface.co/UmeAiRT/ComfyUI-Auto_installer/resolve/main/models/unet/WAN/wan2.1-i2v-14b-720p-Q8_0.gguf"
 )
 
 CLIP_VISION=(
