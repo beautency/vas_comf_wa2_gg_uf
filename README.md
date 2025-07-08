@@ -1,0 +1,1 @@
+# vastai_comfyui_wan2.1
