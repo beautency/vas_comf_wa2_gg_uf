@@ -31,8 +31,7 @@ NODES=(
 )
 
 WORKFLOWS=(
-    "https://raw.githubusercontent.com/vast-ai/base-image/refs/heads/comfyui-ltxvideo-provisioning/derivatives/pytorch/derivatives/comfyui/workflows/ltx-video-i2v-simple.json"
-    "https://raw.githubusercontent.com/vast-ai/base-image/refs/heads/comfyui-ltxvideo-provisioning/derivatives/pytorch/derivatives/comfyui/workflows/ltx-video-t2v-simple.json"
+    "https://github.com/beautency/vastai_comfyui_wan2.1/blob/main/comfyui/workflows/IMG-to-VIDEO-2.3-gguf.json"
 )
 
 INPUT=(
