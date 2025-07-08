@@ -31,7 +31,7 @@ NODES=(
 )
 
 WORKFLOWS=(
-    "https://github.com/beautency/vastai_comfyui_wan2.1/blob/main/comfyui/workflows/IMG-to-VIDEO-2.3-gguf.json"
+    "https://github.com/beautency/vas_comf_wa2_gg_uf/blob/main/comfyui/workflows/IMG-to-VIDEO-2.3-gguf.json"
 )
 
 INPUT=(
