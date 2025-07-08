@@ -1,1 +1,1 @@
-# vastai_comfyui_wan2.1
+# vas_comf_wa2_gg_uf
