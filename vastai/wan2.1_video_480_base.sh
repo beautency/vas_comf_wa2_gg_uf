@@ -30,7 +30,7 @@ NODES=(
 )
 
 WORKFLOWS=(
-    "https://github.com/beautency/vas_comf_wa2_gg_uf/blob/main/comfyui/workflows/IMG-to-VIDEO-2.3-base.json"
+    "https://github.com/beautency/vas_comf_wa2_gg_uf/blob/main/comfyui/workflows/IMG-to-VIDEO-2.3-480-base.json"
 )
 
 INPUT=(
