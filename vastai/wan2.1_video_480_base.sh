@@ -116,7 +116,7 @@ function provisioning_start() {
         "${COMFYUI_DIR}/models/clip_vision" \
         "${CLIP_VISION[@]}"
     provisioning_get_files \
-        "${COMFYUI_DIR}/models/upscale_model" \
+        "${COMFYUI_DIR}/models/upscale_models" \
         "${UPSCALE_MODEL[@]}"
     provisioning_print_end
 }
