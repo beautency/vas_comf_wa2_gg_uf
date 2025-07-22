@@ -23,7 +23,6 @@ NODES=(
     "https://github.com/Suzie1/ComfyUI_Comfyroll_CustomNodes"
 )
 CHECKPOINTS=(
-    "https://huggingface.co/Comfy-Org/flux1-dev/resolve/main/flux1-dev-fp8.safetensors"
 )
 WORKFLOWS=(
     "https://raw.githubusercontent.com/XLabs-AI/x-flux-comfyui/refs/heads/main/workflows/ip_adapter_multiple_inputs_workflow.json"
