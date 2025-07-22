@@ -22,7 +22,9 @@ NODES=(
     "https://github.com/XLabs-AI/x-flux-comfyui"
     "https://github.com/Suzie1/ComfyUI_Comfyroll_CustomNodes"
 )
-
+CHECKPOINTS=(
+    "https://huggingface.co/Comfy-Org/flux1-dev/resolve/main/flux1-dev-fp8.safetensors"
+)
 WORKFLOWS=(
     "https://raw.githubusercontent.com/XLabs-AI/x-flux-comfyui/refs/heads/main/workflows/ip_adapter_multiple_inputs_workflow.json"
     "https://gist.githubusercontent.com/robballantyne/f8cb692bdcd89c96c0bd1ec0c969d905/raw/2d969f732d7873f0e1ee23b2625b50f201c722a5/flux_dev_example.json"
@@ -85,6 +87,10 @@ function provisioning_start() {
     provisioning_get_files \
         "${COMFYUI_DIR}/models/xlabs/ipadapters" \
         "${IPADAPTERS[@]}"
+    provisioning_get_files \
+        "${COMFYUI_DIR}/models/checkpoints" \
+        "${CHECKPOINTS[@]}"
+        
     provisioning_print_end
 }
 
