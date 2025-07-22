@@ -34,12 +34,15 @@ CLIP_MODELS=(
 )
 
 UNET_MODELS=(
+    "https://huggingface.co/black-forest-labs/FLUX.1-dev/resolve/main/flux1-dev.safetensors"
 )
 
 VAE_MODELS=(
+    "https://huggingface.co/black-forest-labs/FLUX.1-dev/resolve/main/ae.safetensors"
 )
 
 CLIP_VISION=(
+    "https://huggingface.co/openai/clip-vit-large-patch14/resolve/main/model.safetensors"
 )
 
 IPADAPTERS=(
@@ -74,7 +77,7 @@ function provisioning_start() {
         "${COMFYUI_DIR}/models/vae" \
         "${VAE_MODELS[@]}"
     provisioning_get_files \
-        "${COMFYUI_DIR}/models/clip" \
+        "${COMFYUI_DIR}/models/flux/clip" \
         "${CLIP_MODELS[@]}"
     provisioning_get_files \
         "${COMFYUI_DIR}/models/clip_vision" \
