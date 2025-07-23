@@ -21,6 +21,7 @@ NODES=(
     "https://huggingface.co/XLabs-AI/flux-ip-adapter"
     "https://github.com/XLabs-AI/x-flux-comfyui"
     "https://github.com/Suzie1/ComfyUI_Comfyroll_CustomNodes"
+    "https://github.com/1038lab/ComfyUI-RMBG"
 )
 CHECKPOINTS=(
 )
