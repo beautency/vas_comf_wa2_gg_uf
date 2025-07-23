@@ -36,7 +36,6 @@ CLIP_MODELS=(
 
 UNET_MODELS=(
     "https://huggingface.co/Comfy-Org/flux1-dev/resolve/main/flux1-dev-fp8.safetensors"
-    "https://huggingface.co/Comfy-Org/flux1-kontext-dev_ComfyUI/resolve/main/split_files/diffusion_models/flux1-dev-kontext_fp8_scaled.safetensors"
 )
 
 VAE_MODELS=(
