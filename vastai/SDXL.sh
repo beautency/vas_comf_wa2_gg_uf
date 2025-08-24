@@ -53,6 +53,7 @@ DIFFUSSION_MODELS=(
 )
 LORA_MODELS=(
     "https://drive.google.com/file/d/1uMQpuRw-Oxe_hPNcWYuKNLWM4Yv_N9_i/view"
+    
 )
 
 ### DO NOT EDIT BELOW HERE UNLESS YOU KNOW WHAT YOU ARE DOING ###
