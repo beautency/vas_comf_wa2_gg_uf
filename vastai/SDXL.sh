@@ -27,7 +27,6 @@ CHECKPOINTS=(
     "https://drive.google.com/file/d/1IHh1FGzVkb5dqsviW0CKavNpMd9XtP5Q/view"
 )
 WORKFLOWS=(
-    "https://raw.githubusercontent.com/XLabs-AI/x-flux-comfyui/refs/heads/main/workflows/ip_adapter_multiple_inputs_workflow.json"
     "https://gist.githubusercontent.com/robballantyne/f8cb692bdcd89c96c0bd1ec0c969d905/raw/2d969f732d7873f0e1ee23b2625b50f201c722a5/flux_dev_example.json"
 )
 
@@ -51,6 +50,9 @@ IPADAPTERS=(
 )
 
 DIFFUSSION_MODELS=(
+)
+LORA_MODELS=(
+    "https://drive.google.com/file/d/1uMQpuRw-Oxe_hPNcWYuKNLWM4Yv_N9_i/view"
 )
 
 ### DO NOT EDIT BELOW HERE UNLESS YOU KNOW WHAT YOU ARE DOING ###
@@ -95,6 +97,9 @@ function provisioning_start() {
     provisioning_get_files \
         "${COMFYUI_DIR}/models/diffusion_models" \
         "${DIFFUSSION_MODELS[@]}"
+    provisioning_get_files \
+        "${COMFYUI_DIR}/models/loras" \
+        "${LORA_MODELS[@]}"
         
     provisioning_print_end
 }
