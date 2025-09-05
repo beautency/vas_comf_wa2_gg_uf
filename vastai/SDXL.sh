@@ -11,6 +11,7 @@ APT_PACKAGES=(
 )
 
 PIP_PACKAGES=(
+    gdown
     #"package-1"
     #"package-2"
 )
@@ -24,7 +25,7 @@ NODES=(
     "https://github.com/1038lab/ComfyUI-RMBG"
 )
 CHECKPOINTS=(
-    "https://drive.google.com/file/d/1IHh1FGzVkb5dqsviW0CKavNpMd9XtP5Q/view"
+    "https://drive.google.com/file/d/1-AHN-BJaI2jGGQV0zQ6OpVRku12a3Z69/view"
 )
 WORKFLOWS=(
     "https://gist.githubusercontent.com/robballantyne/f8cb692bdcd89c96c0bd1ec0c969d905/raw/2d969f732d7873f0e1ee23b2625b50f201c722a5/flux_dev_example.json"
@@ -50,10 +51,31 @@ IPADAPTERS=(
 )
 
 DIFFUSSION_MODELS=(
+    from diffusers import DiffusionPipeline
+
+pipe = DiffusionPipeline.from_pretrained("John6666/fabled-illusion-xxxl-v30photo-noir-sdxl")
+
+prompt = "Astronaut in a jungle, cold color palette, muted colors, detailed, 8k"
+image = pipe(prompt).images[0]
 )
 LORA_MODELS=(
     "https://drive.google.com/file/d/1uMQpuRw-Oxe_hPNcWYuKNLWM4Yv_N9_i/view"
 )
+
+function provisioning_get_drive_files() {
+  local target_dir="$1"; shift
+  mkdir -p "$target_dir"
+  for url in "$@"; do
+    # nombre de salida: si la URL no tiene nombre, define uno:
+    fname="$(basename "${url%%\?*}")"
+    # si sigue siendo "download" u otro genérico, fuerza un nombre útil:
+    [[ "$fname" == "download" || -z "$fname" ]] && fname="custom_model.safetensors"
+    if [ ! -f "${target_dir}/${fname}" ]; then
+      gdown --fuzzy "$url" -O "${target_dir}/${fname}"
+    fi
+  done
+}
+
 
 ### DO NOT EDIT BELOW HERE UNLESS YOU KNOW WHAT YOU ARE DOING ###
 
@@ -67,15 +89,6 @@ function provisioning_start() {
     provisioning_get_files \
         "${workflows_dir}" \
         "${WORKFLOWS[@]}"
-    # Get licensed models if HF_TOKEN set & valid
-    if provisioning_has_valid_hf_token; then
-        UNET_MODELS+=("https://huggingface.co/black-forest-labs/FLUX.1-dev/resolve/main/flux1-dev.safetensors")
-        VAE_MODELS+=("https://huggingface.co/black-forest-labs/FLUX.1-dev/resolve/main/ae.safetensors")
-    else
-        UNET_MODELS+=("https://huggingface.co/black-forest-labs/FLUX.1-schnell/resolve/main/flux1-schnell.safetensors")
-        VAE_MODELS+=("https://huggingface.co/black-forest-labs/FLUX.1-schnell/resolve/main/ae.safetensors")
-        sed -i 's/flux1-dev\.safetensors/flux1-schnell.safetensors/g' "${workflows_dir}/flux_dev_example.json"
-    fi
     provisioning_get_files \
         "${COMFYUI_DIR}/models/unet" \
         "${UNET_MODELS[@]}"
@@ -91,7 +104,7 @@ function provisioning_start() {
     provisioning_get_files \
         "${COMFYUI_DIR}/models/xlabs/ipadapters" \
         "${IPADAPTERS[@]}"
-    provisioning_get_files \
+    provisioning_get_drive_files \
         "${COMFYUI_DIR}/models/checkpoints" \
         "${CHECKPOINTS[@]}"
     provisioning_get_files \
