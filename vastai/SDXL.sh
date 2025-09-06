@@ -17,17 +17,17 @@ PIP_PACKAGES=(
 )
 
 NODES=(
-    "https://github.com/ltdrdata/ComfyUI-Manager"
-    "https://github.com/cubiq/ComfyUI_essentials"
-    "https://github.com/Suzie1/ComfyUI_Comfyroll_CustomNodes"
-    "https://github.com/1038lab/ComfyUI-RMBG"
-    "https://github.com/cubiq/ComfyUI_IPAdapter_plus"
-    "https://github.com/ltdrdata/ComfyUI-Impact-Pack"
-    "https://github.com/ssitu/ComfyUI_UltimateSDUpscale"
-    "https://github.com/ltdrdata/ComfyUI-Impact-Subpack"
-    "https://github.com/skfoo/ComfyUI-Coziness"
-    "https://github.com/WASasquatch/was-node-suite-comfyui"
-    "https://github.com/kk8bit/kaytool"
+    "https://github.com/ltdrdata/ComfyUI-Manager.git"
+    "https://github.com/cubiq/ComfyUI_essentials.git"
+    "https://github.com/Suzie1/ComfyUI_Comfyroll_CustomNodes.git"
+    "https://github.com/1038lab/ComfyUI-RMBG.git"
+    "https://github.com/cubiq/ComfyUI_IPAdapter_plus.git"
+    "https://github.com/ltdrdata/ComfyUI-Impact-Pack.git"
+    "https://github.com/ssitu/ComfyUI_UltimateSDUpscale.git"
+    "https://github.com/ltdrdata/ComfyUI-Impact-Subpack.git"
+    "https://github.com/skfoo/ComfyUI-Coziness.git"
+    "https://github.com/WASasquatch/was-node-suite-comfyui.git"
+    "https://github.com/kk8bit/kaytool.git"
 )
 CHECKPOINTS_GDRIVE=(
     #"https://drive.google.com/file/d/1-AHN-BJaI2jGGQV0zQ6OpVRku12a3Z69/view" #V1
