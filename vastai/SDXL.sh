@@ -36,6 +36,11 @@ CHECKPOINTS_GDRIVE=(
 WORKFLOWS=(
 )
 
+WORKFLOWS_GDRIVE=(
+    "https://drive.google.com/file/d/1nQ5vQcRwbuNjR3JiI4cqD5uZqHKLSvcV/view"
+    
+)
+
 CLIP_MODELS=(
 )
 
@@ -95,6 +100,9 @@ function provisioning_start() {
     provisioning_get_files \
         "${workflows_dir}" \
         "${WORKFLOWS[@]}"
+    provisioning_get_drive_files \
+        "${workflows_dir}" \
+        "${WORKFLOWS_GDRIVE[@]}"        
     provisioning_get_files \
         "${COMFYUI_DIR}/models/unet" \
         "${UNET_MODELS[@]}"
