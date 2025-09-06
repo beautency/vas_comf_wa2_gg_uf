@@ -19,21 +19,24 @@ PIP_PACKAGES=(
 NODES=(
     "https://github.com/ltdrdata/ComfyUI-Manager"
     "https://github.com/cubiq/ComfyUI_essentials"
-    "https://huggingface.co/XLabs-AI/flux-ip-adapter"
-    "https://github.com/XLabs-AI/x-flux-comfyui"
     "https://github.com/Suzie1/ComfyUI_Comfyroll_CustomNodes"
     "https://github.com/1038lab/ComfyUI-RMBG"
+    "https://github.com/cubiq/ComfyUI_IPAdapter_plus"
+    "https://github.com/ltdrdata/ComfyUI-Impact-Pack"
+    "https://github.com/ssitu/ComfyUI_UltimateSDUpscale"
+    "https://github.com/ltdrdata/ComfyUI-Impact-Subpack"
+    "https://github.com/skfoo/ComfyUI-Coziness"
+    "https://github.com/WASasquatch/was-node-suite-comfyui"
+    "https://github.com/kk8bit/kaytool"
 )
-CHECKPOINTS=(
+CHECKPOINTS_GDRIVE=(
     "https://drive.google.com/file/d/1-AHN-BJaI2jGGQV0zQ6OpVRku12a3Z69/view"
 )
+
 WORKFLOWS=(
-    "https://gist.githubusercontent.com/robballantyne/f8cb692bdcd89c96c0bd1ec0c969d905/raw/2d969f732d7873f0e1ee23b2625b50f201c722a5/flux_dev_example.json"
 )
 
 CLIP_MODELS=(
-    "https://huggingface.co/comfyanonymous/flux_text_encoders/resolve/main/clip_l.safetensors"
-    "https://huggingface.co/comfyanonymous/flux_text_encoders/resolve/main/t5xxl_fp16.safetensors"
 )
 
 UNET_MODELS=(
@@ -47,31 +50,34 @@ CLIP_VISION=(
 )
 
 IPADAPTERS=(
-    "https://huggingface.co/XLabs-AI/flux-ip-adapter/resolve/main/ip_adapter.safetensors"
 )
 
-DIFFUSSION_MODELS=(
-    from diffusers import DiffusionPipeline
-
-pipe = DiffusionPipeline.from_pretrained("John6666/fabled-illusion-xxxl-v30photo-noir-sdxl")
-
-prompt = "Astronaut in a jungle, cold color palette, muted colors, detailed, 8k"
-image = pipe(prompt).images[0]
-)
-LORA_MODELS=(
+LORA_MODELS_GDRIVE=(
     "https://drive.google.com/file/d/1uMQpuRw-Oxe_hPNcWYuKNLWM4Yv_N9_i/view"
+)
+
+LORA_MODELS=(
+    "https://huggingface.co/GritTin/LoraStableDiffusion/resolve/main/Body%20Type_alpha1.0_rank4_noxattn_last.safetensors"
+)
+ULTRALYTICS=(
+    "https://huggingface.co/Ultralytics/YOLOv8/resolve/8a9e1a55f987a77f9966c2ac3f80aa8aa37b3c1a/yolov8m.pt"
 )
 
 function provisioning_get_drive_files() {
   local target_dir="$1"; shift
   mkdir -p "$target_dir"
   for url in "$@"; do
-    # nombre de salida: si la URL no tiene nombre, define uno:
+    # Nombre de salida:
+    # Para URLs /view de Drive, basename será "view" → fuerza nombre útil
+    local fname
     fname="$(basename "${url%%\?*}")"
-    # si sigue siendo "download" u otro genérico, fuerza un nombre útil:
-    [[ "$fname" == "download" || -z "$fname" ]] && fname="custom_model.safetensors"
-    if [ ! -f "${target_dir}/${fname}" ]; then
+    [[ "$fname" == "view" || "$fname" == "download" || -z "$fname" ]] && fname="custom_model.safetensors"
+
+    if [[ ! -f "${target_dir}/${fname}" ]]; then
+      echo "Descargando: $url -> ${target_dir}/${fname}"
       gdown --fuzzy "$url" -O "${target_dir}/${fname}"
+    else
+      echo "Ya existe: ${target_dir}/${fname} (omitiendo descarga)"
     fi
   done
 }
@@ -106,13 +112,17 @@ function provisioning_start() {
         "${IPADAPTERS[@]}"
     provisioning_get_drive_files \
         "${COMFYUI_DIR}/models/checkpoints" \
-        "${CHECKPOINTS[@]}"
-    provisioning_get_files \
-        "${COMFYUI_DIR}/models/diffusion_models" \
-        "${DIFFUSSION_MODELS[@]}"
+        "${CHECKPOINTS_GDRIVE[@]}"
     provisioning_get_files \
         "${COMFYUI_DIR}/models/loras" \
         "${LORA_MODELS[@]}"
+    provisioning_get_drive_files \
+        "${COMFYUI_DIR}/models/loras" \
+        "${LORA_MODELS_GDRIVE[@]}"
+    provisioning_get_files \
+        "${COMFYUI_DIR}/models/ultralytics/bbox" \
+        "${ULTRALYTICS[@]}"
+    
         
     provisioning_print_end
 }
