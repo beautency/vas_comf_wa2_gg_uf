@@ -30,7 +30,8 @@ NODES=(
     "https://github.com/kk8bit/kaytool"
 )
 CHECKPOINTS_GDRIVE=(
-    "https://drive.google.com/file/d/1-AHN-BJaI2jGGQV0zQ6OpVRku12a3Z69/view"
+    "https://drive.google.com/file/d/1-AHN-BJaI2jGGQV0zQ6OpVRku12a3Z69/view" #V1
+    "https://drive.google.com/file/d/1S1cjUo7XBaZYrXeGHjTRcMca8kni6Wb8/view" #V3
 )
 
 WORKFLOWS=(
