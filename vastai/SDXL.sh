@@ -28,6 +28,7 @@ NODES=(
     "https://github.com/skfoo/ComfyUI-Coziness.git"
     "https://github.com/WASasquatch/was-node-suite-comfyui.git"
     "https://github.com/kk8bit/kaytool.git"
+    "https://github.com/Gourieff/ComfyUI-ReActor.git"
 )
 CHECKPOINTS_GDRIVE=(
     #"https://drive.google.com/file/d/1-AHN-BJaI2jGGQV0zQ6OpVRku12a3Z69/view" #V1
@@ -73,17 +74,11 @@ function provisioning_get_drive_files() {
   local target_dir="$1"; shift
   mkdir -p "$target_dir"
   for url in "$@"; do
-    # Nombre de salida:
-    # Para URLs /view de Drive, basename será "view" → fuerza nombre útil
-    local fname
-    fname="$(basename "${url%%\?*}")"
-    [[ "$fname" == "view" || "$fname" == "download" || -z "$fname" ]] && fname="custom_model.safetensors"
-
-    if [[ ! -f "${target_dir}/${fname}" ]]; then
-      echo "Descargando: $url -> ${target_dir}/${fname}"
-      gdown --fuzzy "$url" -O "${target_dir}/${fname}"
+    if [[ ! -f "${target_dir}" ]]; then
+      echo "Descargando: $url -> ${target_dir}/"
+      gdown --fuzzy "$url" -O "${target_dir}/"
     else
-      echo "Ya existe: ${target_dir}/${fname} (omitiendo descarga)"
+      echo "Ya existe el archivo en: ${target_dir}/ (omitiendo descarga)"
     fi
   done
 }
