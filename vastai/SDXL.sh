@@ -64,7 +64,7 @@ LORA_MODELS_GDRIVE=(
 )
 
 LORA_MODELS=(
-    "https://huggingface.co/GritTin/LoraStableDiffusion/resolve/main/Body%20Type_alpha1.0_rank4_noxattn_last.safetensors"
+    "https://huggingface.co/GritTin/LoraStableDiffusion/resolve/main/Body Type_alpha1.0_rank4_noxattn_last.safetensors"
 )
 ULTRALYTICS=(
     "https://huggingface.co/Ultralytics/YOLOv8/resolve/8a9e1a55f987a77f9966c2ac3f80aa8aa37b3c1a/yolov8m.pt"
