@@ -57,17 +57,34 @@ CLIP_VISION=(
 )
 
 IPADAPTERS=(
+    "https://huggingface.co/h94/IP-Adapter/resolve/main/sdxl_models/ip-adapter-plus_sdxl_vit-h.safetensors"
 )
 
 LORA_MODELS_GDRIVE=(
     "https://drive.google.com/file/d/1uMQpuRw-Oxe_hPNcWYuKNLWM4Yv_N9_i/view"
+    "https://drive.google.com/file/d/1L8dVYCkg1XL_8bm4oNEml8lTxaB-WVSz/view"
 )
 
 LORA_MODELS=(
-    "https://huggingface.co/GritTin/LoraStableDiffusion/resolve/main/Body Type_alpha1.0_rank4_noxattn_last.safetensors"
+     #"https://huggingface.co/GritTin/LoraStableDiffusion/resolve/main/Body Type_alpha1.0_rank4_noxattn_last.safetensors"
 )
-ULTRALYTICS=(
+ULTRALYTICS_BBOX=(
     "https://huggingface.co/Ultralytics/YOLOv8/resolve/8a9e1a55f987a77f9966c2ac3f80aa8aa37b3c1a/yolov8m.pt"
+    "https://huggingface.co/ashllay/YOLO_Models/resolve/e07b01219ff1807e1885015f439d788b038f49bd/bbox/face_yolov8m.pt"
+    "https://huggingface.co/WolfAether21/ADETAILER-STABLE-DIFFUSION-PLUGIN/resolve/main/vagina-v3.0-fantasy.pt"
+    "https://huggingface.co/ashllay/YOLO_Models/resolve/e07b01219ff1807e1885015f439d788b038f49bd/bbox/female-breast-v4.0-fantasy.pt"
+    "https://huggingface.co/ashllay/YOLO_Models/resolve/e07b01219ff1807e1885015f439d788b038f49bd/bbox/hand_yolov8s.pt"
+    "https://huggingface.co/ashllay/YOLO_Models/resolve/e07b01219ff1807e1885015f439d788b038f49bd/bbox/vagina-v3.2.pt"
+    "https://huggingface.co/ashllay/YOLO_Models/resolve/e07b01219ff1807e1885015f439d788b038f49bd/bbox/nsfw_watermarks_s_yolov8_v1.pt"
+    "https://huggingface.co/ashllay/YOLO_Models/resolve/e07b01219ff1807e1885015f439d788b038f49bd/bbox/watermarks_s_yolov8_v1.pt"
+    "https://huggingface.co/ashllay/YOLO_Models/resolve/e07b01219ff1807e1885015f439d788b038f49bd/bbox/penis.pt"
+    "https://huggingface.co/ashllay/YOLO_Models/resolve/e07b01219ff1807e1885015f439d788b038f49bd/bbox/full_eyes_detect_v1.pt"
+    "https://huggingface.co/ashllay/YOLO_Models/resolve/e07b01219ff1807e1885015f439d788b038f49bd/bbox/Eyes.pt"
+    "https://huggingface.co/ashllay/YOLO_Models/resolve/e07b01219ff1807e1885015f439d788b038f49bd/bbox/Eyeful_v2-Paired.pt"
+)
+ULTRALYTICS_SEGM=(
+    "https://huggingface.co/ashllay/YOLO_Models/resolve/e07b01219ff1807e1885015f439d788b038f49bd/segm/Anzhc%20Face%20seg%20768%20v2%20y8n.pt"
+    "https://huggingface.co/ashllay/YOLO_Models/resolve/e07b01219ff1807e1885015f439d788b038f49bd/segm/Anzhc%20Breasts%20Seg%20v1%201024m.pt"
 )
 
 function provisioning_get_drive_files() {
@@ -111,8 +128,11 @@ function provisioning_start() {
     provisioning_get_files \
         "${COMFYUI_DIR}/models/clip_vision" \
         "${CLIP_VISION[@]}"
+    #provisioning_get_files \
+    #    "${COMFYUI_DIR}/models/xlabs/ipadapters" \ #Flux folder
+    #    "${IPADAPTERS[@]}"
     provisioning_get_files \
-        "${COMFYUI_DIR}/models/xlabs/ipadapters" \
+        "${COMFYUI_DIR}/models/ipadapters" \
         "${IPADAPTERS[@]}"
     provisioning_get_drive_files \
         "${COMFYUI_DIR}/models/checkpoints" \
@@ -125,7 +145,10 @@ function provisioning_start() {
         "${LORA_MODELS_GDRIVE[@]}"
     provisioning_get_files \
         "${COMFYUI_DIR}/models/ultralytics/bbox" \
-        "${ULTRALYTICS[@]}"
+        "${ULTRALYTICS_BBOX[@]}"
+    provisioning_get_files \
+        "${COMFYUI_DIR}/models/ultralytics/seg" \
+        "${ULTRALYTICS_SEGM[@]}"
     
         
     provisioning_print_end
