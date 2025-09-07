@@ -63,6 +63,9 @@ CLIP_VISION=(
 IPADAPTERS=(
     "https://huggingface.co/h94/IP-Adapter/resolve/main/sdxl_models/ip-adapter-plus_sdxl_vit-h.safetensors"
 )
+IPADAPTERS_RENAME=(
+    "CLIP-ViT-H-14-laion2B-s32B-b79K"
+)
 
 LORA_MODELS_GDRIVE=(
     "https://drive.google.com/file/d/1uMQpuRw-Oxe_hPNcWYuKNLWM4Yv_N9_i/view"
@@ -135,14 +138,15 @@ function provisioning_start() {
     provisioning_get_files \
         "${COMFYUI_DIR}/models/clip" \
         "${CLIP_MODELS[@]}"
-    provisioning_get_files \
+    provisioning_get_files_rename_file \
         "${COMFYUI_DIR}/models/clip_vision" \
-        "${CLIP_VISION[@]}"
+        "${CLIP_VISION[@]}" \
+        "${IPADAPTERS_RENAME[@]}"
     #provisioning_get_files \
     #    "${COMFYUI_DIR}/models/xlabs/ipadapters" \ #Flux folder
     #    "${IPADAPTERS[@]}"
     provisioning_get_files \
-        "${COMFYUI_DIR}/models/ipadapters" \
+        "${COMFYUI_DIR}/models/xlabs/ipadapters" \
         "${IPADAPTERS[@]}"
     provisioning_get_files \
         "${COMFYUI_DIR}/models/checkpoints" \
@@ -218,6 +222,35 @@ function provisioning_get_files() {
     for url in "${arr[@]}"; do
         printf "Downloading: %s\n" "${url}"
         provisioning_download "${url}" "${dir}"
+        printf "\n"
+    done
+}
+
+function provisioning_get_files_rename_file() {
+    if [[ -z $2 ]]; then return 1; fi
+    
+    dir="$1"
+    mkdir -p "$dir"
+    shift
+    arr=("$@")
+    printf "Downloading %s model(s) to %s...\n" "${#arr[@]}" "$dir"
+
+    while [[ $# -gt 0 ]]; do
+        url="$1"
+        new_name=""
+        shift
+        # si hay un segundo argumento y no empieza por "http" (o "gs://", "s3://", etc.), lo tomamos como nombre
+        if [[ $# -gt 0 && ! "$1" =~ ^https?:// ]]; then
+            new_name="$1"
+            shift
+        fi
+        if [[ -n "$new_name" ]]; then
+            printf "Downloading: %s as %s\n" "$url" "$new_name"
+            provisioning_download "$url" "$dir/$new_name"
+        else
+            printf "Downloading: %s\n" "$url"
+            provisioning_download "$url" "$dir"
+        fi
         printf "\n"
     done
 }
