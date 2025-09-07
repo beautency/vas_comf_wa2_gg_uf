@@ -29,7 +29,7 @@ NODES=(
     "https://github.com/WASasquatch/was-node-suite-comfyui.git"
     "https://github.com/kk8bit/kaytool.git"
     "https://github.com/Gourieff/ComfyUI-ReActor.git"
-    "https://github.com/pkuliyi2015/sd-webui-stablesr.git"
+    "https://github.com/gameltb/Comfyui-StableSR"
 )
 CHECKPOINTS=(
     "https://huggingface.co/Iceclear/StableSR/resolve/main/stablesr_768v_000139.ckpt"
