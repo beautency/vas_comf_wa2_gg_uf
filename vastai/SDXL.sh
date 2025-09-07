@@ -29,6 +29,10 @@ NODES=(
     "https://github.com/WASasquatch/was-node-suite-comfyui.git"
     "https://github.com/kk8bit/kaytool.git"
     "https://github.com/Gourieff/ComfyUI-ReActor.git"
+    "https://github.com/pkuliyi2015/sd-webui-stablesr.git"
+)
+CHECKPOINTS=(
+    "https://huggingface.co/Iceclear/StableSR/resolve/main/stablesr_768v_000139.ckpt"
 )
 CHECKPOINTS_GDRIVE=(
     #"https://drive.google.com/file/d/1-AHN-BJaI2jGGQV0zQ6OpVRku12a3Z69/view" #V1
@@ -89,6 +93,9 @@ ULTRALYTICS_SEGM=(
 SAMS=(
     "https://huggingface.co/datasets/Gourieff/ReActor/resolve/main/models/sams/sam_vit_b_01ec64.pth"
 )
+STABLESR=(
+    "https://huggingface.co/Iceclear/StableSR/resolve/main/webui_768v_139.ckpt"
+)
 
 function provisioning_get_drive_files() {
   local target_dir="$1"; shift
@@ -137,6 +144,9 @@ function provisioning_start() {
     provisioning_get_files \
         "${COMFYUI_DIR}/models/ipadapters" \
         "${IPADAPTERS[@]}"
+    provisioning_get_files \
+        "${COMFYUI_DIR}/models/checkpoints" \
+        "${CHECKPOINTS[@]}"
     provisioning_get_drive_files \
         "${COMFYUI_DIR}/models/checkpoints" \
         "${CHECKPOINTS_GDRIVE[@]}"
@@ -155,8 +165,10 @@ function provisioning_start() {
     provisioning_get_files \
         "${COMFYUI_DIR}/models/sams" \
         "${SAMS[@]}"
-    
-        
+    provisioning_get_files \
+        "${COMFYUI_DIR}/models/stablesr" \
+        "${STABLESR[@]}"
+
     provisioning_print_end
 }
 
