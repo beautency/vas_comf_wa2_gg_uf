@@ -86,6 +86,9 @@ ULTRALYTICS_SEGM=(
     "https://huggingface.co/ashllay/YOLO_Models/resolve/e07b01219ff1807e1885015f439d788b038f49bd/segm/Anzhc%20Face%20seg%20768%20v2%20y8n.pt"
     "https://huggingface.co/ashllay/YOLO_Models/resolve/e07b01219ff1807e1885015f439d788b038f49bd/segm/Anzhc%20Breasts%20Seg%20v1%201024m.pt"
 )
+SAMS=(
+    "https://huggingface.co/datasets/Gourieff/ReActor/resolve/main/models/sams/sam_vit_b_01ec64.pth"
+)
 
 function provisioning_get_drive_files() {
   local target_dir="$1"; shift
@@ -149,6 +152,9 @@ function provisioning_start() {
     provisioning_get_files \
         "${COMFYUI_DIR}/models/ultralytics/seg" \
         "${ULTRALYTICS_SEGM[@]}"
+    provisioning_get_files \
+        "${COMFYUI_DIR}/models/sams" \
+        "${SAMS[@]}"
     
         
     provisioning_print_end
