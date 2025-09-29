@@ -29,7 +29,7 @@ NODES=(
     "https://github.com/WASasquatch/was-node-suite-comfyui.git"
     "https://github.com/kk8bit/kaytool.git"
     "https://github.com/Gourieff/ComfyUI-ReActor.git"
-    "https://github.com/gameltb/Comfyui-StableSR"
+    "https://github.com/gameltb/Comfyui-StableSR.git"
 )
 CHECKPOINTS=(
     "https://huggingface.co/Iceclear/StableSR/resolve/main/stablesr_768v_000139.ckpt"
@@ -100,6 +100,15 @@ STABLESR=(
     "https://huggingface.co/Iceclear/StableSR/resolve/main/webui_768v_139.ckpt"
 )
 
+# ReActor dependencies (for RaoxiHendes workflow)
+REACTOR_ONNX=(
+    "https://huggingface.co/deepinsight/insightface/resolve/main/models/inswapper_128.onnx"
+)
+REACTOR_FACE_MODELS=(
+    # Place your custom face libraries here (optional), e.g.:
+    # "https://example.com/path/to/blend_flo_sheip_dilaca_saramaga_ystrhvsky_robin.safetensors"
+)
+
 function provisioning_get_drive_files() {
   local target_dir="$1"; shift
   mkdir -p "$target_dir"
@@ -146,7 +155,7 @@ function provisioning_start() {
     #    "${COMFYUI_DIR}/models/xlabs/ipadapters" \ #Flux folder
     #    "${IPADAPTERS[@]}"
     provisioning_get_files \
-        "${COMFYUI_DIR}/models/xlabs/ipadapters" \
+        "${COMFYUI_DIR}/models/ipadapters" \
         "${IPADAPTERS[@]}"
     provisioning_get_files \
         "${COMFYUI_DIR}/models/checkpoints" \
@@ -172,6 +181,15 @@ function provisioning_start() {
     provisioning_get_files \
         "${COMFYUI_DIR}/models/stablesr" \
         "${STABLESR[@]}"
+
+    # ReActor models (inswapper and optional face libraries)
+    provisioning_get_files \
+        "${COMFYUI_DIR}/models/reactor" \
+        "${REACTOR_ONNX[@]}"
+    mkdir -p "${COMFYUI_DIR}/models/reactor/faces"
+    provisioning_get_files \
+        "${COMFYUI_DIR}/models/reactor/faces" \
+        "${REACTOR_FACE_MODELS[@]}"
 
     provisioning_print_end
 }
