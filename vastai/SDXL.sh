@@ -66,25 +66,30 @@ CLIP_VISION=(
     "https://huggingface.co/openai/clip-vit-large-patch14/resolve/main/model.safetensors"
 )
 
-# CLIP ViT-H/14 LAION2B for IP-Adapter
+# CLIP vision models required by IP-Adapter (exact filenames for Unified Loader)
 CLIP_VISION_H14=(
+    # ViT-H/14 LAION2B
     "https://huggingface.co/laion/CLIP-ViT-H-14-laion2B-s32B-b79K/resolve/main/model.safetensors|CLIP-ViT-H-14-laion2B-s32B-b79K.safetensors"
+)
+CLIP_VISION_BIGG=(
+    # ViT-bigG/14 LAION2B
+    "https://huggingface.co/laion/CLIP-ViT-bigG-14-laion2B-39B-b160k/resolve/main/model.safetensors|CLIP-ViT-bigG-14-laion2B-39B-b160k.safetensors"
 )
 
 IPADAPTERS=(
     "https://huggingface.co/h94/IP-Adapter/resolve/main/sdxl_models/ip-adapter-plus_sdxl_vit-h.safetensors"
 )
 
-# IP-Adapter SDXL model set (saved under sdxl_models/...)
+# IP-Adapter SDXL models (exact filenames, placed under models/ipadapter)
 IPADAPTERS_SDXL=(
-    "https://huggingface.co/h94/IP-Adapter/resolve/main/sdxl_models/ip-adapter-plus_sdxl_vit-h.safetensors|sdxl_models/ip-adapter-plus_sdxl_vit-h.safetensors"
-    "https://huggingface.co/h94/IP-Adapter/resolve/main/sdxl_models/ip-adapter-plus-face_sdxl_vit-h.safetensors|sdxl_models/ip-adapter-plus-face_sdxl_vit-h.safetensors"
-    "https://huggingface.co/h94/IP-Adapter/resolve/main/sdxl_models/ip-adapter_sdxl.safetensors|sdxl_models/ip-adapter_sdxl.safetensors"
-    "https://huggingface.co/h94/IP-Adapter/resolve/main/sdxl_models/ip-adapter_sdxl_vit-h.safetensors|sdxl_models/ip-adapter_sdxl_vit-h.safetensors"
+    "https://huggingface.co/h94/IP-Adapter/resolve/main/sdxl_models/ip-adapter-plus_sdxl_vit-h.safetensors|ip-adapter-plus_sdxl_vit-h.safetensors"
+    "https://huggingface.co/h94/IP-Adapter/resolve/main/sdxl_models/ip-adapter-plus-face_sdxl_vit-h.safetensors|ip-adapter-plus-face_sdxl_vit-h.safetensors"
+    "https://huggingface.co/h94/IP-Adapter/resolve/main/sdxl_models/ip-adapter_sdxl.safetensors|ip-adapter_sdxl.safetensors"
+    "https://huggingface.co/h94/IP-Adapter/resolve/main/sdxl_models/ip-adapter_sdxl_vit-h.safetensors|ip-adapter_sdxl_vit-h.safetensors"
 )
-# IP-Adapter SDXL image encoder
+# Optional image encoder for SDXL IP-Adapter Plus/Face (kept for compatibility)
 IPADAPTER_IMAGE_ENCODER=(
-    "https://huggingface.co/h94/IP-Adapter/resolve/main/sdxl_models/image_encoder/model.safetensors|sdxl_models/image_encoder/model.safetensors"
+    "https://huggingface.co/h94/IP-Adapter/resolve/main/sdxl_models/image_encoder/model.safetensors|image_encoder/model.safetensors"
 )
 
 LORA_MODELS_GDRIVE=(
@@ -181,21 +186,20 @@ function provisioning_start() {
     provisioning_get_files \
         "${COMFYUI_DIR}/models/clip_vision" \
         "${CLIP_VISION[@]}"
-    # Download LAION CLIP-ViT-H/14 model with the exact filename IP-Adapter expects
+    # Download CLIP models with the exact filenames IP-Adapter expects
     provisioning_get_renamed_files \
         "${COMFYUI_DIR}/models/clip_vision" \
         "${CLIP_VISION_H14[@]}"
-    # IP-Adapter SDXL models and image encoder
     provisioning_get_renamed_files \
-        "${COMFYUI_DIR}/models/ipadapters" \
+        "${COMFYUI_DIR}/models/clip_vision" \
+        "${CLIP_VISION_BIGG[@]}"
+    # IP-Adapter SDXL models and optional image encoder (placed in models/ipadapter)
+    provisioning_get_renamed_files \
+        "${COMFYUI_DIR}/models/ipadapter" \
         "${IPADAPTERS_SDXL[@]}"
     provisioning_get_renamed_files \
-        "${COMFYUI_DIR}/models/ipadapters" \
+        "${COMFYUI_DIR}/models/ipadapter" \
         "${IPADAPTER_IMAGE_ENCODER[@]}"
-    # Ensure compatibility path (some nodes look for models/ipadapter)
-    if [[ ! -e "${COMFYUI_DIR}/models/ipadapter" ]]; then
-        ln -sf "${COMFYUI_DIR}/models/ipadapters" "${COMFYUI_DIR}/models/ipadapter"
-    fi
     provisioning_get_files \
         "${COMFYUI_DIR}/models/checkpoints" \
         "${CHECKPOINTS[@]}"
@@ -333,8 +337,13 @@ function provisioning_get_renamed_files() {
         local downloaded
         downloaded=$(find "$tmp_dir" -maxdepth 1 -type f | head -n1)
         if [[ -n "$downloaded" ]]; then
-            mv -f "$downloaded" "${dir}/${name}"
-            printf "Saved as: %s\n" "${dir}/${name}"
+            # Ensure destination subdirectories exist when name contains folders
+            local dest_path="${dir}/${name}"
+            local dest_dir
+            dest_dir=$(dirname "$dest_path")
+            mkdir -p "$dest_dir"
+            mv -f "$downloaded" "$dest_path"
+            printf "Saved as: %s\n" "$dest_path"
         fi
         rm -rf "$tmp_dir"
         printf "\n"
