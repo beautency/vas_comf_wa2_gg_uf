@@ -30,6 +30,7 @@ NODES=(
     "https://github.com/kk8bit/kaytool.git"
     "https://github.com/Gourieff/ComfyUI-ReActor.git"
     "https://github.com/gameltb/Comfyui-StableSR.git"
+    "https://github.com/fssorc/ComfyUI_FaceShaper.git"
 )
 CHECKPOINTS=(
     "https://huggingface.co/Iceclear/StableSR/resolve/main/stablesr_768v_000139.ckpt"
@@ -47,6 +48,11 @@ WORKFLOWS_GDRIVE=(
     
 )
 
+# Local workflows to copy into ComfyUI
+WORKFLOWS_LOCAL=(
+    "${WORKSPACE}/vastai_comfyui_wan2.1/comfyui/workflows/RaoxiHendes.json"
+)
+
 CLIP_MODELS=(
 )
 
@@ -60,11 +66,25 @@ CLIP_VISION=(
     "https://huggingface.co/openai/clip-vit-large-patch14/resolve/main/model.safetensors"
 )
 
+# CLIP ViT-H/14 LAION2B for IP-Adapter
+CLIP_VISION_H14=(
+    "https://huggingface.co/laion/CLIP-ViT-H-14-laion2B-s32B-b79K/resolve/main/model.safetensors|CLIP-ViT-H-14-laion2B-s32B-b79K.safetensors"
+)
+
 IPADAPTERS=(
     "https://huggingface.co/h94/IP-Adapter/resolve/main/sdxl_models/ip-adapter-plus_sdxl_vit-h.safetensors"
 )
-IPADAPTERS_RENAME=(
-    "CLIP-ViT-H-14-laion2B-s32B-b79K"
+
+# IP-Adapter SDXL model set (saved under sdxl_models/...)
+IPADAPTERS_SDXL=(
+    "https://huggingface.co/h94/IP-Adapter/resolve/main/sdxl_models/ip-adapter-plus_sdxl_vit-h.safetensors|sdxl_models/ip-adapter-plus_sdxl_vit-h.safetensors"
+    "https://huggingface.co/h94/IP-Adapter/resolve/main/sdxl_models/ip-adapter-plus-face_sdxl_vit-h.safetensors|sdxl_models/ip-adapter-plus-face_sdxl_vit-h.safetensors"
+    "https://huggingface.co/h94/IP-Adapter/resolve/main/sdxl_models/ip-adapter_sdxl.safetensors|sdxl_models/ip-adapter_sdxl.safetensors"
+    "https://huggingface.co/h94/IP-Adapter/resolve/main/sdxl_models/ip-adapter_sdxl_vit-h.safetensors|sdxl_models/ip-adapter_sdxl_vit-h.safetensors"
+)
+# IP-Adapter SDXL image encoder
+IPADAPTER_IMAGE_ENCODER=(
+    "https://huggingface.co/h94/IP-Adapter/resolve/main/sdxl_models/image_encoder/model.safetensors|sdxl_models/image_encoder/model.safetensors"
 )
 
 LORA_MODELS_GDRIVE=(
@@ -98,6 +118,12 @@ SAMS=(
 )
 STABLESR=(
     "https://huggingface.co/Iceclear/StableSR/resolve/main/webui_768v_139.ckpt"
+)
+
+# LivePortrait models for FaceShaper (landmark detection)
+LIVEPORTRAIT_MODELS=(
+    "https://huggingface.co/Kijai/LivePortrait_safetensors/resolve/main/landmark.onnx"
+    "https://huggingface.co/Kijai/LivePortrait_safetensors/resolve/main/landmark_model.pth"
 )
 
 # ReActor dependencies (for RaoxiHendes workflow)
@@ -135,6 +161,10 @@ function provisioning_start() {
     provisioning_get_files \
         "${workflows_dir}" \
         "${WORKFLOWS[@]}"
+    # Copy local workflows (if present)
+    provisioning_copy_workflows \
+        "${workflows_dir}" \
+        "${WORKFLOWS_LOCAL[@]}"
     provisioning_get_drive_files \
         "${workflows_dir}" \
         "${WORKFLOWS_GDRIVE[@]}"        
@@ -147,16 +177,25 @@ function provisioning_start() {
     provisioning_get_files \
         "${COMFYUI_DIR}/models/clip" \
         "${CLIP_MODELS[@]}"
-    provisioning_get_files_rename_file \
-        "${COMFYUI_DIR}/models/clip_vision" \
-        "${CLIP_VISION[@]}" \
-        "${IPADAPTERS_RENAME[@]}"
-    #provisioning_get_files \
-    #    "${COMFYUI_DIR}/models/xlabs/ipadapters" \ #Flux folder
-    #    "${IPADAPTERS[@]}"
+    # Download OpenAI CLIP-ViT/L-14 vision model
     provisioning_get_files \
+        "${COMFYUI_DIR}/models/clip_vision" \
+        "${CLIP_VISION[@]}"
+    # Download LAION CLIP-ViT-H/14 model with the exact filename IP-Adapter expects
+    provisioning_get_renamed_files \
+        "${COMFYUI_DIR}/models/clip_vision" \
+        "${CLIP_VISION_H14[@]}"
+    # IP-Adapter SDXL models and image encoder
+    provisioning_get_renamed_files \
         "${COMFYUI_DIR}/models/ipadapters" \
-        "${IPADAPTERS[@]}"
+        "${IPADAPTERS_SDXL[@]}"
+    provisioning_get_renamed_files \
+        "${COMFYUI_DIR}/models/ipadapters" \
+        "${IPADAPTER_IMAGE_ENCODER[@]}"
+    # Ensure compatibility path (some nodes look for models/ipadapter)
+    if [[ ! -e "${COMFYUI_DIR}/models/ipadapter" ]]; then
+        ln -sf "${COMFYUI_DIR}/models/ipadapters" "${COMFYUI_DIR}/models/ipadapter"
+    fi
     provisioning_get_files \
         "${COMFYUI_DIR}/models/checkpoints" \
         "${CHECKPOINTS[@]}"
@@ -181,6 +220,11 @@ function provisioning_start() {
     provisioning_get_files \
         "${COMFYUI_DIR}/models/stablesr" \
         "${STABLESR[@]}"
+
+    # LivePortrait weights for FaceShaper
+    provisioning_get_files \
+        "${COMFYUI_DIR}/models/liveportrait" \
+        "${LIVEPORTRAIT_MODELS[@]}"
 
     # ReActor models (inswapper and optional face libraries)
     provisioning_get_files \
@@ -270,6 +314,41 @@ function provisioning_get_files_rename_file() {
             provisioning_download "$url" "$dir"
         fi
         printf "\n"
+    done
+}
+
+# Robust renaming downloader: entries as "url|new_name"
+function provisioning_get_renamed_files() {
+    if [[ -z $2 ]]; then return 1; fi
+    local dir="$1"; shift
+    local arr=("$@")
+    mkdir -p "$dir"
+    for entry in "${arr[@]}"; do
+        local url="${entry%%|*}"
+        local name="${entry#*|}"
+        local tmp_dir="${dir}/.tmp_download"
+        mkdir -p "$tmp_dir"
+        printf "Downloading: %s\n" "$url"
+        provisioning_download "$url" "$tmp_dir"
+        local downloaded
+        downloaded=$(find "$tmp_dir" -maxdepth 1 -type f | head -n1)
+        if [[ -n "$downloaded" ]]; then
+            mv -f "$downloaded" "${dir}/${name}"
+            printf "Saved as: %s\n" "${dir}/${name}"
+        fi
+        rm -rf "$tmp_dir"
+        printf "\n"
+    done
+}
+
+function provisioning_copy_workflows() {
+    local dest="$1"; shift
+    mkdir -p "$dest"
+    for src in "$@"; do
+        if [[ -f "$src" ]]; then
+            echo "Installing workflow: $src -> $dest/"
+            cp -f "$src" "$dest/"
+        fi
     done
 }
 
