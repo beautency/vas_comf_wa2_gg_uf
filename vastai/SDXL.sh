@@ -100,7 +100,8 @@ LORA_MODELS_GDRIVE=(
 )
 
 LORA_MODELS=(
-     #"https://huggingface.co/GritTin/LoraStableDiffusion/resolve/main/Body Type_alpha1.0_rank4_noxattn_last.safetensors"
+    #"https://huggingface.co/GritTin/LoraStableDiffusion/resolve/main/Body Type_alpha1.0_rank4_noxattn_last.safetensors"
+    "https://huggingface.co/DervlexVenice/age_slider_lora_ponyxl_sdxl-style-pony/resolve/main/Age_Slider_LoRA_PonyXL_SDXL_402667.safetensors"
 )
 
 # Loras that require exact filenames for auto-detection (Unified Loader)
@@ -109,7 +110,7 @@ LORA_MODELS_RENAMED=(
     "https://huggingface.co/h94/IP-Adapter-FaceID/resolve/main/ip-adapter-faceid-plusv2_sdxl_lora.safetensors|faceid.plusv2.sdxl.lora.safetensors"
 )
 ULTRALYTICS_BBOX=(
-    "https://huggingface.co/Ultralytics/YOLOv8/resolve/8a9e1a55f987a77f9966c2ac3f80aa8aa37b3c1a/yolov8m.pt"
+    "https://huggingface.co/Ultralytics/YOLOv8/resolve/8a9e1a55f987a77f9966c2ac3f80aa8aa37b3c1a/yolov8l.pt"
     "https://huggingface.co/ashllay/YOLO_Models/resolve/e07b01219ff1807e1885015f439d788b038f49bd/bbox/face_yolov8m.pt"
     "https://huggingface.co/WolfAether21/ADETAILER-STABLE-DIFFUSION-PLUGIN/resolve/main/vagina-v3.0-fantasy.pt"
     "https://huggingface.co/ashllay/YOLO_Models/resolve/e07b01219ff1807e1885015f439d788b038f49bd/bbox/female-breast-v4.0-fantasy.pt"
@@ -121,11 +122,16 @@ ULTRALYTICS_BBOX=(
     "https://huggingface.co/ashllay/YOLO_Models/resolve/e07b01219ff1807e1885015f439d788b038f49bd/bbox/full_eyes_detect_v1.pt"
     "https://huggingface.co/ashllay/YOLO_Models/resolve/e07b01219ff1807e1885015f439d788b038f49bd/bbox/Eyes.pt"
     "https://huggingface.co/ashllay/YOLO_Models/resolve/e07b01219ff1807e1885015f439d788b038f49bd/bbox/Eyeful_v2-Paired.pt"
+    # Nipples bbox detector (YOLOv8s)
+    "https://huggingface.co/ashllay/YOLO_Models/resolve/e07b01219ff1807e1885015f439d788b038f49bd/bbox/nipples_yolov8s.pt"
 )
 ULTRALYTICS_SEGM=(
     "https://huggingface.co/ashllay/YOLO_Models/resolve/e07b01219ff1807e1885015f439d788b038f49bd/segm/Anzhc%20Face%20seg%20768%20v2%20y8n.pt"
     "https://huggingface.co/ashllay/YOLO_Models/resolve/e07b01219ff1807e1885015f439d788b038f49bd/segm/Anzhc%20Breasts%20Seg%20v1%201024m.pt"
+    "https://huggingface.co/ashllay/YOLO_Models/resolve/e07b01219ff1807e1885015f439d788b038f49bd/segm/face_yolov8m-seg_60.pt"
+    "https://huggingface.co/uooogh/nipples_yolov8s-seg/resolve/main/nipples_yolov8s-seg.pt"
 )
+
 SAMS=(
     "https://huggingface.co/datasets/Gourieff/ReActor/resolve/main/models/sams/sam_vit_b_01ec64.pth"
 )
@@ -233,7 +239,7 @@ function provisioning_start() {
         "${COMFYUI_DIR}/models/ultralytics/bbox" \
         "${ULTRALYTICS_BBOX[@]}"
     provisioning_get_files \
-        "${COMFYUI_DIR}/models/ultralytics/seg" \
+        "${COMFYUI_DIR}/models/ultralytics/segm" \
         "${ULTRALYTICS_SEGM[@]}"
     provisioning_get_files \
         "${COMFYUI_DIR}/models/sams" \
