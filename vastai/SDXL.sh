@@ -86,6 +86,8 @@ IPADAPTERS_SDXL=(
     "https://huggingface.co/h94/IP-Adapter/resolve/main/sdxl_models/ip-adapter-plus-face_sdxl_vit-h.safetensors|ip-adapter-plus-face_sdxl_vit-h.safetensors"
     "https://huggingface.co/h94/IP-Adapter/resolve/main/sdxl_models/ip-adapter_sdxl.safetensors|ip-adapter_sdxl.safetensors"
     "https://huggingface.co/h94/IP-Adapter/resolve/main/sdxl_models/ip-adapter_sdxl_vit-h.safetensors|ip-adapter_sdxl_vit-h.safetensors"
+    # FaceID PLUS V2 (SDXL) — keep .bin extension for correct loading
+    "https://huggingface.co/h94/IP-Adapter-FaceID/resolve/main/ip-adapter-faceid-plusv2_sdxl.bin|faceid.plusv2.sdxl.bin"
 )
 # Optional image encoder for SDXL IP-Adapter Plus/Face (kept for compatibility)
 IPADAPTER_IMAGE_ENCODER=(
@@ -99,6 +101,12 @@ LORA_MODELS_GDRIVE=(
 
 LORA_MODELS=(
      #"https://huggingface.co/GritTin/LoraStableDiffusion/resolve/main/Body Type_alpha1.0_rank4_noxattn_last.safetensors"
+)
+
+# Loras that require exact filenames for auto-detection (Unified Loader)
+LORA_MODELS_RENAMED=(
+    # FaceID PLUS V2 LoRA (SDXL)
+    "https://huggingface.co/h94/IP-Adapter-FaceID/resolve/main/ip-adapter-faceid-plusv2_sdxl_lora.safetensors|faceid.plusv2.sdxl.lora.safetensors"
 )
 ULTRALYTICS_BBOX=(
     "https://huggingface.co/Ultralytics/YOLOv8/resolve/8a9e1a55f987a77f9966c2ac3f80aa8aa37b3c1a/yolov8m.pt"
@@ -212,6 +220,15 @@ function provisioning_start() {
     provisioning_get_drive_files \
         "${COMFYUI_DIR}/models/loras" \
         "${LORA_MODELS_GDRIVE[@]}"
+    # Download LoRAs with explicit filenames for loader compatibility
+    provisioning_get_renamed_files \
+        "${COMFYUI_DIR}/models/loras" \
+        "${LORA_MODELS_RENAMED[@]}"
+    # Also keep a copy with the upstream filename for reference
+    if [[ -f "${COMFYUI_DIR}/models/loras/faceid.plusv2.sdxl.lora.safetensors" ]]; then
+        cp -f "${COMFYUI_DIR}/models/loras/faceid.plusv2.sdxl.lora.safetensors" \
+              "${COMFYUI_DIR}/models/loras/ip-adapter-faceid-plusv2_sdxl_lora.safetensors"
+    fi
     provisioning_get_files \
         "${COMFYUI_DIR}/models/ultralytics/bbox" \
         "${ULTRALYTICS_BBOX[@]}"
