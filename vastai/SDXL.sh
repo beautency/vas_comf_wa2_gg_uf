@@ -134,6 +134,7 @@ ULTRALYTICS_SEGM=(
 
 SAMS=(
     "https://huggingface.co/datasets/Gourieff/ReActor/resolve/main/models/sams/sam_vit_b_01ec64.pth"
+    "https://dl.fbaipublicfiles.com/segment_anything/sam_vit_h_4b8939.pth"
 )
 STABLESR=(
     "https://huggingface.co/Iceclear/StableSR/resolve/main/webui_768v_139.ckpt"
