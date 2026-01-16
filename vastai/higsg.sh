@@ -2,25 +2,25 @@
 set -euo pipefail
 
 # ------------------------------------------------------------------------------
-# Higgs Audio (Higgs TTS) Vast.ai Provisioning Script
-# - Clona/actualiza repo
-# - Instala deps
-# - Descarga modelos en WORKSPACE (persistente)
+# Higgs Audio (Higgs TTS) Vast.ai Provisioning Script (UPDATED)
+# - Fixes hf hub version conflicts (<1.0)
+# - Uses `hf` CLI instead of `huggingface-cli`
+# - Downloads models to WORKSPACE for persistence
 # ------------------------------------------------------------------------------
 
 echo "[higgs] Provisioning start: $(date -Is)"
 
-# Permite saltarte provisioning si existe este flag (patrón Vast común)
+# Skip provisioning if flag exists (common Vast pattern)
 if [ -f "/.noprovisioning" ]; then
   echo "[higgs] /.noprovisioning present -> skipping provisioning."
   exit 0
 fi
 
-# WORKSPACE suele existir en Vast y apuntar a almacenamiento persistente
+# Persistent workspace (Vast usually provides WORKSPACE)
 WORKSPACE="${WORKSPACE:-/workspace}"
 mkdir -p "$WORKSPACE"
 
-# Logging simple
+# Logging
 LOG_DIR="${WORKSPACE}/logs"
 mkdir -p "$LOG_DIR"
 LOG_FILE="${LOG_DIR}/provision_higgs.log"
@@ -29,7 +29,7 @@ exec > >(tee -a "$LOG_FILE") 2>&1
 echo "[higgs] WORKSPACE=$WORKSPACE"
 
 # ------------------------------------------------------------------------------
-# 1) Activar venv base del template (muchos templates Vast lo traen aquí)
+# 1) Activate template venv if present
 # ------------------------------------------------------------------------------
 if [ -f "/venv/main/bin/activate" ]; then
   # shellcheck disable=SC1091
@@ -40,10 +40,10 @@ else
 fi
 
 python -V || true
-pip -V || true
+python -m pip -V || true
 
 # ------------------------------------------------------------------------------
-# 2) Dependencias del sistema (audio + build basics)
+# 2) System deps for audio + build
 # ------------------------------------------------------------------------------
 echo "[higgs] Installing system deps (ffmpeg, libsndfile, git, etc.)"
 export DEBIAN_FRONTEND=noninteractive
@@ -57,7 +57,7 @@ sudo apt-get install -y --no-install-recommends \
   build-essential
 
 # ------------------------------------------------------------------------------
-# 3) Clonar/actualizar repo Higgs
+# 3) Clone / update Higgs repo
 # ------------------------------------------------------------------------------
 HIGGS_DIR="${WORKSPACE}/higgs-audio"
 if [ -d "${HIGGS_DIR}/.git" ]; then
@@ -77,16 +77,32 @@ fi
 echo "[higgs] Upgrading pip"
 python -m pip install --upgrade pip
 
-echo "[higgs] Installing python requirements"
-pip install -r requirements.txt
-pip install -e .
-
-# Hugging Face tooling
-echo "[higgs] Ensuring huggingface_hub + hf cli"
-pip install --upgrade "huggingface_hub[cli]"
+echo "[higgs] Installing Higgs python requirements"
+python -m pip install -r requirements.txt
+python -m pip install -e .
 
 # ------------------------------------------------------------------------------
-# 5) Configurar cache persistente HF (IMPORTANTÍSIMO)
+# 5) Hugging Face Hub (PIN < 1.0) + CLI (`hf`)
+#    This avoids: tokenizers/transformers require huggingface-hub<1.0
+# ------------------------------------------------------------------------------
+echo "[higgs] Installing compatible huggingface_hub (<1.0) with hf CLI"
+
+# Remove any incompatible hub
+python -m pip uninstall -y huggingface_hub hf-xet || true
+
+# Install a compatible 0.x series with CLI
+python -m pip install -U "huggingface_hub[cli]>=0.26.0,<1.0"
+
+# Verify CLI exists
+if ! command -v hf >/dev/null 2>&1; then
+  echo "[higgs] ERROR: hf CLI not found after install. Check venv/PATH."
+  exit 1
+fi
+
+hf --version || true
+
+# ------------------------------------------------------------------------------
+# 6) Persistent HF cache (IMPORTANT)
 # ------------------------------------------------------------------------------
 export HF_HOME="${WORKSPACE}/hf"
 export TRANSFORMERS_CACHE="${WORKSPACE}/hf"
@@ -95,16 +111,16 @@ mkdir -p "$HF_HOME"
 
 echo "[higgs] HF_HOME=$HF_HOME"
 
-# Login opcional (si pasas HF_TOKEN en Vast ENV)
+# Optional auth (set HF_TOKEN env var in Vast)
 if [ -n "${HF_TOKEN:-}" ]; then
-  echo "[higgs] HF_TOKEN provided -> logging in (non-interactive)"
-  huggingface-cli login --token "$HF_TOKEN" --add-to-git-credential true || true
+  echo "[higgs] HF_TOKEN provided -> hf auth login"
+  hf auth login --token "$HF_TOKEN" --add-to-git-credential
 else
   echo "[higgs] No HF_TOKEN provided -> proceeding anonymous (may be rate-limited)."
 fi
 
 # ------------------------------------------------------------------------------
-# 6) Descarga de modelos (pesos + tokenizer)
+# 7) Download models (weights + tokenizer) into WORKSPACE
 # ------------------------------------------------------------------------------
 MODEL_ID="${MODEL_ID:-bosonai/higgs-audio-v2-generation-3B-base}"
 TOKENIZER_ID="${TOKENIZER_ID:-bosonai/higgs-audio-v2-tokenizer}"
@@ -128,22 +144,19 @@ download_if_missing() {
   echo "[higgs] Downloading: $repo_id -> $out_dir"
   mkdir -p "$out_dir"
 
-  # --local-dir-use-symlinks False evita symlinks raros cuando WORKSPACE está en FS distinto
-  huggingface-cli download "$repo_id" \
-    --local-dir "$out_dir" \
-    --local-dir-use-symlinks False
+  # `hf download` supports --local-dir
+  hf download "$repo_id" --local-dir "$out_dir"
 
-  # Marker para idempotencia
   echo "$repo_id" > "$marker"
 }
 
 download_if_missing "$MODEL_ID" "$MODEL_DIR" "${MODEL_DIR}/.download_ok"
 download_if_missing "$TOKENIZER_ID" "$TOKENIZER_DIR" "${TOKENIZER_DIR}/.download_ok"
 
-echo "[higgs] Models downloaded under: $MODELS_DIR"
+echo "[higgs] Models present under: $MODELS_DIR"
 
 # ------------------------------------------------------------------------------
-# 7) Smoke test (no genera audio, solo confirma que CUDA existe)
+# 8) Smoke test (CUDA presence)
 # ------------------------------------------------------------------------------
 SMOKE="${WORKSPACE}/higgs_smoke_test.py"
 cat > "$SMOKE" <<'PY'
@@ -158,11 +171,11 @@ echo "[higgs] Running smoke test"
 python "$SMOKE" || true
 
 # ------------------------------------------------------------------------------
-# 8) Instrucciones útiles
+# 9) Final hints
 # ------------------------------------------------------------------------------
 echo "[higgs] Provisioning complete: $(date -Is)"
 echo
-echo "[higgs] Next steps (example):"
+echo "[higgs] Example run:"
 echo "  cd ${HIGGS_DIR}"
 echo "  export HF_HOME=${HF_HOME}"
 echo "  python3 examples/generation.py \\"
