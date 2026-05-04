@@ -14,20 +14,17 @@ PIP_PACKAGES=(
 )
 
 NODES=(
-    "https://github.com/pythongosssss/ComfyUI-Custom-Scripts"
     "https://github.com/city96/ComfyUI-GGUF"
-    "https://github.com/gokayfem/ComfyUI_VLM_nodes"
     "https://github.com/kijai/ComfyUI-KJNodes"
     "https://github.com/Kosinkadink/ComfyUI-VideoHelperSuite"
-    "https://github.com/Smirnov75/ComfyUI-mxToolkit"
-    "https://github.com/facok/ComfyUI-HunyuanVideoMultiLora"
     "https://github.com/rgthree/rgthree-comfy"
-    "https://github.com/yolain/ComfyUI-Easy-Use"
-    "https://github.com/Fannovel16/ComfyUI-Frame-Interpolation"
-    "https://github.com/WASasquatch/was-node-suite-comfyui"
-    "https://github.com/kijai/ComfyUI-Florence2"
-    "https://github.com/yuvraj108c/ComfyUI-Upscaler-Tensorrt"
-    "https://github.com/pollockjj/ComfyUI-MultiGPU"
+    "https://github.com/Smirnov75/ComfyUI-mxToolkit"
+    "https://github.com/chrisgoringe/cg-use-everywhere"
+    "https://github.com/jamesWalker55/comfyui-various"
+    "https://github.com/evanspearman/ComfyMath"
+    "https://github.com/Lightricks/ComfyUI-LTXVideo"
+    "https://github.com/alexopus/ComfyUI-Image-Saver"
+    "https://github.com/tritant/ComfyUI_Custom_Switch"
 )
 
 WORKFLOWS=(
@@ -40,7 +37,8 @@ CHECKPOINT_MODELS=(
 )
 
 CLIP_MODELS=(
-    "https://huggingface.co/Comfy-Org/Wan_2.1_ComfyUI_repackaged/resolve/main/split_files/text_encoders/umt5_xxl_fp8_e4m3fn_scaled.safetensors"
+    "https://huggingface.co/Comfy-Org/ltx-2/resolve/main/split_files/text_encoders/gemma_3_12B_it_fp4_mixed.safetensors"
+    "https://huggingface.co/Kijai/LTX2.3_comfy/resolve/main/text_encoders/ltx-2.3_text_projection_bf16.safetensors"
 )
 
 UNET_MODELS=(
@@ -50,11 +48,12 @@ LORA_MODELS=(
 )
 
 VAE_MODELS=(
-    "https://huggingface.co/Comfy-Org/Wan_2.1_ComfyUI_repackaged/resolve/main/split_files/vae/wan_2.1_vae.safetensors"
+    "https://huggingface.co/Kijai/LTX2.3_comfy/resolve/main/vae/LTX23_audio_vae_bf16.safetensors"
+    "https://huggingface.co/Kijai/LTX2.3_comfy/resolve/main/vae/LTX23_video_vae_bf16.safetensors"
+    "https://huggingface.co/Kijai/LTX2.3_comfy/resolve/main/vae/taeltx2_3.safetensors"
 )
 
 VAE_RENAMED=(
-    "wan_2.1_vae.safetensors|wan_2.1_vae_fp8_e4m3fn.safetensors"
 )
 
 ESRGAN_MODELS=(
@@ -64,44 +63,31 @@ CONTROLNET_MODELS=(
 )
 
 DIFFUSION_MODELS=(
-    "https://huggingface.co/UmeAiRT/ComfyUI-Auto_installer/resolve/main/models/diffusion_models/WAN/wan2.1_i2v_480p_14B_fp8_e4m3fn.safetensors"
-    "https://huggingface.co/UmeAiRT/ComfyUI-Auto_installer/resolve/main/models/diffusion_models/WAN/wan2.1_i2v_720p_14B_fp8_e4m3fn.safetensors"
+    "https://huggingface.co/vantagewithai/LTX-2.3-GGUF/resolve/main/dev/ltx-2-3-22b-dev-Q4_K_M.gguf"
 )
 
 CLIP_VISION=(
-    "https://huggingface.co/Comfy-Org/Wan_2.1_ComfyUI_repackaged/resolve/main/split_files/clip_vision/clip_vision_h.safetensors"
 )
 
 CLIP_VISION_RENAMED=(
-    "clip_vision_h.safetensors|wan2/clip_vision_h_fp8_e4m3fn.safetensors"
 )
 
 UPSCALE_MODEL=(
-    "https://huggingface.co/spaces/Marne/Real-ESRGAN/resolve/main/RealESRGAN_x4plus.pth"
 )
 
+LTX_AV_CHECKPOINT_URL="${LTX_AV_CHECKPOINT_URL:-https://huggingface.co/Lightricks/LTX-2/resolve/main/ltx-av-step-1751000_vocoder_24K.safetensors}"
+
 CUSTOM_MODELS=(
-    "https://huggingface.co/Phips/4xNomos2_realplksr_dysample/resolve/main/4xNomos2_realplksr_dysample.pth::${COMFYUI_DIR}/models/upscale_models/4xNomos2_realplksr_dysample.pth"
-    "https://huggingface.co/UmeAiRT/ComfyUI-Auto_installer/resolve/main/models/loras/WAN2.1/Wan21_CausVid_14B_T2V_lora_rank32.safetensors::${COMFYUI_DIR}/models/lora/wan/Wan21_CausVid_14B_T2V_lora_rank32.safetensors"
-    "https://huggingface.co/UmeAiRT/ComfyUI-Auto_installer/resolve/main/models/loras/WAN2.1/Wan21_I2V_14B_lightx2v_cfg_step_distill_lora_rank64.safetensors::${COMFYUI_DIR}/models/lora/wan/Wan21_I2V_14B_lightx2v_cfg_step_distill_lora_rank64.safetensors"
-    "https://huggingface.co/Kijai/WanVideo_comfy/resolve/main/Wan21_AccVid_T2V_14B_lora_rank32_fp16.safetensors::${COMFYUI_DIR}/models/lora/wan/Wan21_AccVid_T2V_14B_lora_rank32_fp16.safetensors"
-    "https://huggingface.co/Kijai/WanVideo_comfy/resolve/main/Wan21_CausVid_14B_T2V_lora_rank32_v2.safetensors::${COMFYUI_DIR}/models/lora/wan/Wan21_CausVid_14B_T2V_lora_rank32_v2.safetensors"
-    "https://huggingface.co/Kijai/WanVideo_comfy/resolve/main/Pusa/Wan21_PusaV1_LoRA_14B_rank512_bf16.safetensors::${COMFYUI_DIR}/models/lora/wan/Wan21_PusaV1_LoRA_14B_rank512_bf16.safetensors"
-    "https://huggingface.co/yeqiu168182/wan-nsfw-e14-fixed/resolve/main/wan-nsfw-e14-fixed.safetensors::${COMFYUI_DIR}/models/lora/wan/wan-nsfw-e14-fixed.safetensors"
-    "https://huggingface.co/yeqiu168182/c0wg1rl_WAN-i2v-720p-50/resolve/main/c0wg1rl_WAN-i2v-720p-50.safetensors::${COMFYUI_DIR}/models/lora/wan/c0wg1rl_WAN-i2v-720p-50.safetensors"
-    "https://huggingface.co/EdWalker/MasturbationCumshot/resolve/main/masturbation_cumshot_v1.1_e310.safetensors::${COMFYUI_DIR}/models/lora/wan/masturbation_cumshot_v1.1_e310.safetensors"
-    "https://huggingface.co/yeqiu168182/wan_pov_missionary_i2v_v1.1/resolve/main/wan_pov_missionary_i2v_v1.1.safetensors::${COMFYUI_DIR}/models/lora/wan/wan_pov_missionary_i2v_v1.1.safetensors"
-    "https://huggingface.co/romanfratric234/WAN_2-1_Furry_nsfw_14b_img2vid_and_nsfw_motion_in_general/resolve/main/furry_nsfw_1.1_e22.safetensors::${COMFYUI_DIR}/models/lora/wan/furry_nsfw_1.1_e22.safetensors"
-    "https://huggingface.co/Remade-AI/360-Orbit/resolve/main/360_Orbit.safetensors::${COMFYUI_DIR}/models/lora/wan/360-orbit.safetensors"
-    "https://huggingface.co/romanfratric234/WAN_2-1_I2V_Female_Orgasm/resolve/main/orgasm_v4_e48.safetensors::${COMFYUI_DIR}/models/lora/wan/orgasm_v4_e48.safetensors"
-    "https://huggingface.co/DAKARA555/genitals_helper_v1.0_e219/resolve/main/genitals_helper_v1.0_e219.safetensors::${COMFYUI_DIR}/models/lora/wan/genitals_helper_v1.0_e219.safetensors"
-    "https://huggingface.co/romanfratric234/WAN_2-1_Hand_in_Panties_-_Masturbation/resolve/main/T2V-I2V_h4nd_p4nties_v3.safetensors::${COMFYUI_DIR}/models/lora/wan/T2V-I2V_h4nd_p4nties_v3.safetensors"
-    "https://huggingface.co/romanfratric234/WAN_2-1_Anal_Sex_-_I2V_T2V_14B/resolve/main/wan-t2v-i2v-anal-combined-e50.safetensors::${COMFYUI_DIR}/models/lora/wan/wan-t2v-i2v-anal-combined-e50.safetensors"
-    "https://huggingface.co/Remade-AI/Inflate/resolve/main/inflate_20_epochs.safetensors::${COMFYUI_DIR}/models/lora/wan/Inflate_20_epochs.safetensors"
-    "https://huggingface.co/Muapi/instagram-women-wan-2.1-2.2-official-2.2-release/resolve/main/instagram-women-wan-2.1-2.2-official-2.2-release.safetensors::${COMFYUI_DIR}/models/lora/wan/instagram-women-wan-2.1-2.2-official-2.2-release.safetensors"
-    "https://huggingface.co/UnifiedHorusRA/Full_Nelson_WAN2.2_5B/resolve/main/wan2.2_5b_full_nelson_000004000.safetensors::${COMFYUI_DIR}/models/lora/wan/wan2.2_5b_full_nelson_000004000.safetensors"
-    "https://huggingface.co/yeqiu168182/wan22-ultimatedeepthroat-I2V-34epoc-high-k3nk/resolve/main/wan22-ultimatedeepthroat-I2V-34epoc-high-k3nk.safetensors::${COMFYUI_DIR}/models/lora/wan/wan22-ultimatedeepthroat-I2V-34epoc-high-k3nk.safetensors"
+    "${LTX_AV_CHECKPOINT_URL}::${COMFYUI_DIR}/models/checkpoints/ltx-av-step-1751000_vocoder_24K.safetensors"
+    "https://huggingface.co/Comfy-Org/ltx-2/resolve/main/split_files/text_encoders/gemma-3-12b-it-qat-q4_0-unquantized_readout_proj/model/model.safetensors::${COMFYUI_DIR}/models/clip/gemma-3-12b-it-qat-q4_0-unquantized_readout_proj/model/model.safetensors"
+    "https://huggingface.co/Lightricks/LTX-2.3/resolve/main/ltx-2.3-spatial-upscaler-x2-1.1.safetensors::${COMFYUI_DIR}/models/latent_upscale_models/ltx-2.3-spatial-upscaler-x2-1.1.safetensors"
+    "https://huggingface.co/Lightricks/LTX-2/resolve/main/ltx-2-spatial-upscaler-x2-1.0.safetensors::${COMFYUI_DIR}/models/latent_upscale_models/ltx-2-spatial-upscaler-x2-1.0.safetensors"
+    "https://huggingface.co/Kijai/LTX2.3_comfy/resolve/main/loras/ltx-2.3-22b-distilled-lora-dynamic_fro09_avg_rank_105_bf16.safetensors::${COMFYUI_DIR}/models/lora/90 video/ltx-2.3-22b-distilled-lora-dynamic_fro09_avg_rank_105_bf16.safetensors"
+    "https://huggingface.co/Lightricks/LTX-2-19b-IC-LoRA-Detailer/resolve/main/ltx-2-19b-ic-lora-detailer.safetensors::${COMFYUI_DIR}/models/lora/90 video/ltx-2-19b-ic-lora-detailer.safetensors"
 )
+
+LOCAL_WORKFLOW_SOURCE="${COMFYUI_DIR%/ComfyUI}/vastai_comfyui_wan2.1/comfyui/workflows/ltx23AllInOneWorkflowForRTX_v43.json"
+LOCAL_WORKFLOW_TARGET="${COMFYUI_DIR}/user/default/workflows/ltx23AllInOneWorkflowForRTX_v43.json"
 
 ### DO NOT EDIT BELOW HERE UNLESS YOU KNOW WHAT YOU ARE DOING ###
 
@@ -113,6 +99,7 @@ function provisioning_start() {
     provisioning_get_pip_packages
     workflows_dir="${COMFYUI_DIR}/user/default/workflows"
     mkdir -p "${workflows_dir}"
+    provisioning_get_local_workflow
     provisioning_get_files \
         "${workflows_dir}" \
         "${WORKFLOWS[@]}"
@@ -176,7 +163,7 @@ function provisioning_get_pip_packages() {
 }
 
 provisioning_update_comfyui() {
-    required_tag="v0.3.34"
+    required_tag="v0.3.75"
     cd ${COMFYUI_DIR}
     git fetch --all --tags
     current_commit=$(git rev-parse HEAD)
@@ -210,6 +197,20 @@ function provisioning_get_nodes() {
     done
 }
 
+function provisioning_get_local_workflow() {
+    if [[ -f "$LOCAL_WORKFLOW_TARGET" ]]; then
+        printf "Workflow already exists: %s\n" "$LOCAL_WORKFLOW_TARGET"
+        return
+    fi
+    if [[ -f "$LOCAL_WORKFLOW_SOURCE" ]]; then
+        printf "Copying workflow: %s\n" "$LOCAL_WORKFLOW_SOURCE"
+        mkdir -p "$(dirname "$LOCAL_WORKFLOW_TARGET")"
+        cp "$LOCAL_WORKFLOW_SOURCE" "$LOCAL_WORKFLOW_TARGET"
+    else
+        printf "Local workflow source not found: %s\n" "$LOCAL_WORKFLOW_SOURCE"
+    fi
+}
+
 function provisioning_get_files() {
     if [[ -z $2 ]]; then return 1; fi
 
@@ -231,8 +232,9 @@ function provisioning_get_custom_models() {
     fi
     printf "Downloading %s custom model(s)...\n" "${#CUSTOM_MODELS[@]}"
     for entry in "${CUSTOM_MODELS[@]}"; do
-        IFS='::' read -r url target <<< "$entry"
-        if [[ -z "$url" || -z "$target" ]]; then
+        url="${entry%%::*}"
+        target="${entry#*::}"
+        if [[ -z "$url" || -z "$target" || "$url" == "$target" ]]; then
             continue
         fi
         if [[ -f "$target" ]]; then

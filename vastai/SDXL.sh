@@ -122,6 +122,7 @@ ULTRALYTICS_BBOX=(
     "https://huggingface.co/ashllay/YOLO_Models/resolve/e07b01219ff1807e1885015f439d788b038f49bd/bbox/full_eyes_detect_v1.pt"
     "https://huggingface.co/ashllay/YOLO_Models/resolve/e07b01219ff1807e1885015f439d788b038f49bd/bbox/Eyes.pt"
     "https://huggingface.co/ashllay/YOLO_Models/resolve/e07b01219ff1807e1885015f439d788b038f49bd/bbox/Eyeful_v2-Paired.pt"
+    "https://huggingface.co/Bingsu/adetailer/resolve/main/face_yolov8n_v2.pt"
     # Nipples bbox detector (YOLOv8s)
     "https://huggingface.co/ashllay/YOLO_Models/resolve/e07b01219ff1807e1885015f439d788b038f49bd/bbox/nipples_yolov8s.pt"
 )
