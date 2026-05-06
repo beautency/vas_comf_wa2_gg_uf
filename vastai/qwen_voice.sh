@@ -87,13 +87,13 @@ echo "[qwen-voice] Upgrading pip"
 python -m pip install --upgrade pip setuptools wheel
 
 echo "[qwen-voice] Installing Qwen TTS runtime and support packages"
-python -m pip install -U qwen-tts soundfile transformers accelerate
+python -m pip install -U qwen-tts soundfile transformers accelerate ninja packaging
 
 echo "[qwen-voice] Note: torch is expected to already be installed in /venv/main with a host-compatible CUDA build."
 echo "[qwen-voice] If CUDA is unavailable, update the NVIDIA driver or reinstall PyTorch with a compatible CUDA version."
 
 echo "[qwen-voice] Installing flash-attn (GPU accelerator for faster inference)"
-python -m pip install -U flash-attn || echo "[qwen-voice] WARN: flash-attn install failed, continuing with sdpa/eager"
+python -m pip install -U flash-attn --no-build-isolation || echo "[qwen-voice] WARN: flash-attn install failed, continuing with sdpa/eager"
 
 # ------------------------------------------------------------------------------
 # 4) Hugging Face CLI and persistent cache
