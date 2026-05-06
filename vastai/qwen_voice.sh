@@ -4,8 +4,11 @@ set -euo pipefail
 # ------------------------------------------------------------------------------
 # Qwen3-TTS Vast.ai Provisioning Script
 # - Based on higsg.sh structure
-# - Installs qwen-tts and persistent Hugging Face cache
+# - Installs Qwen TTS runtime and required Python packages
 # - Downloads Qwen3 TTS models for voice design, custom voice, and cloning
+# - Validates CUDA/PyTorch compatibility and optionally installs flash-attn
+# - Assumes host NVIDIA driver must match installed PyTorch CUDA build
+# - No need for wan2gp, TTS server on :8080, or Jupyter for this integration
 # ------------------------------------------------------------------------------
 
 echo "[qwen-voice] Provisioning start: $(date -Is)"
@@ -42,6 +45,25 @@ fi
 python -V || true
 python -m pip -V || true
 
+echo "[qwen-voice] Checking NVIDIA / PyTorch compatibility"
+if command -v nvidia-smi >/dev/null 2>&1; then
+  nvidia-smi || true
+else
+  echo "[qwen-voice] WARNING: nvidia-smi not available"
+fi
+
+python - <<'PY'
+import sys
+try:
+    import torch
+    print('torch:', torch.__version__)
+    print('torch.version.cuda:', torch.version.cuda)
+    print('cuda_available:', torch.cuda.is_available())
+except Exception as exc:
+    print('torch check failed:', exc)
+    sys.exit(0)
+PY
+
 # ------------------------------------------------------------------------------
 # 2) System dependencies
 # ------------------------------------------------------------------------------
@@ -51,7 +73,9 @@ sudo apt-get update -y
 sudo apt-get install -y --no-install-recommends \
   git \
   ffmpeg \
+  sox \
   libsndfile1 \
+  libsndfile1-dev \
   ca-certificates \
   curl \
   build-essential
@@ -62,8 +86,14 @@ sudo apt-get install -y --no-install-recommends \
 echo "[qwen-voice] Upgrading pip"
 python -m pip install --upgrade pip setuptools wheel
 
-echo "[qwen-voice] Installing Qwen TTS runtime"
-python -m pip install -U qwen-tts soundfile
+echo "[qwen-voice] Installing Qwen TTS runtime and support packages"
+python -m pip install -U qwen-tts soundfile transformers accelerate
+
+echo "[qwen-voice] Note: torch is expected to already be installed in /venv/main with a host-compatible CUDA build."
+echo "[qwen-voice] If CUDA is unavailable, update the NVIDIA driver or reinstall PyTorch with a compatible CUDA version."
+
+echo "[qwen-voice] Installing flash-attn (GPU accelerator for faster inference)"
+python -m pip install -U flash-attn || echo "[qwen-voice] WARN: flash-attn install failed, continuing with sdpa/eager"
 
 # ------------------------------------------------------------------------------
 # 4) Hugging Face CLI and persistent cache
@@ -85,6 +115,21 @@ export HUGGINGFACE_HUB_CACHE="${WORKSPACE}/hf"
 mkdir -p "$HF_HOME"
 
 echo "[qwen-voice] HF_HOME=$HF_HOME"
+
+cat >/etc/profile.d/qwen_remote.sh <<'EOF'
+export HF_HOME=/workspace/hf
+export TRANSFORMERS_CACHE=/workspace/hf
+export HUGGINGFACE_HUB_CACHE=/workspace/hf
+export TRANSFORMERS_NO_TF=1
+export USE_TF=0
+export QWEN_REMOTE_DEVICE=cuda
+export QWEN_REMOTE_DTYPE=float16
+export QWEN_REMOTE_MODEL_DIR_BASE=/workspace/models/Qwen3-TTS-12Hz-1.7B-Base
+export QWEN_REMOTE_MODEL_DIR_CUSTOM_VOICE=/workspace/models/Qwen3-TTS-12Hz-1.7B-CustomVoice
+export QWEN_REMOTE_MODEL_DIR_VOICE_DESIGN=/workspace/models/Qwen3-TTS-12Hz-1.7B-VoiceDesign
+EOF
+chmod 644 /etc/profile.d/qwen_remote.sh
+echo "[qwen-voice] Persisted Qwen runtime env to /etc/profile.d/qwen_remote.sh"
 
 if [ -n "${HF_TOKEN:-}" ]; then
   echo "[qwen-voice] Logging into Hugging Face"
@@ -146,11 +191,78 @@ print("voice_clone_model:", "Qwen/Qwen3-TTS-12Hz-1.7B-Base")
 print("smoke_test: ok")
 PY
 
+echo "[qwen-voice] Running real VoiceDesign audio smoke test"
+python - <<'PY'
+import os
+import torch
+import soundfile as sf
+from qwen_tts import Qwen3TTSModel
+
+device = "cuda" if torch.cuda.is_available() else "cpu"
+dtype = torch.float16 if device == "cuda" else torch.float32
+attn = "sdpa" if device == "cuda" else "eager"
+model = Qwen3TTSModel.from_pretrained(
+    "/workspace/models/Qwen3-TTS-12Hz-1.7B-VoiceDesign",
+    device_map=device,
+    dtype=dtype,
+    attn_implementation=attn,
+)
+wavs, sr = model.generate_voice_design(
+    text="Hola, esto es una prueba de voz con Qwen TTS en Vast.ai.",
+    language="Spanish",
+    instruct="Voz natural, clara y cercana, con tono profesional y amable.",
+    non_streaming_mode=True,
+)
+out_path = "/workspace/qwen_voice_design_test.wav"
+sf.write(out_path, wavs[0], sr)
+print("voice_design_smoke:", out_path, os.path.getsize(out_path))
+PY
+
+if [ -f "/workspace/reference_voice.wav" ]; then
+  echo "[qwen-voice] Running real VoiceClone audio smoke test"
+  python - <<'PY'
+import os
+import torch
+import soundfile as sf
+from qwen_tts import Qwen3TTSModel
+
+device = "cuda" if torch.cuda.is_available() else "cpu"
+dtype = torch.float16 if device == "cuda" else torch.float32
+attn = "sdpa" if device == "cuda" else "eager"
+model = Qwen3TTSModel.from_pretrained(
+    "/workspace/models/Qwen3-TTS-12Hz-1.7B-Base",
+    device_map=device,
+    dtype=dtype,
+    attn_implementation=attn,
+)
+wavs, sr = model.generate_voice_clone(
+    text="Hola, esta es una prueba de clonacion de voz con Qwen TTS.",
+    ref_audio="/workspace/reference_voice.wav",
+    ref_text="Texto de referencia que corresponde al audio de muestra.",
+    language="Spanish",
+    non_streaming_mode=True,
+)
+out_path = "/workspace/qwen_voice_clone_test.wav"
+sf.write(out_path, wavs[0], sr)
+print("voice_clone_smoke:", out_path, os.path.getsize(out_path))
+PY
+else
+  echo "[qwen-voice] VoiceClone smoke test skipped: /workspace/reference_voice.wav not found"
+fi
+
+touch "${WORKSPACE}/logs/qwen_voice_ready.ok"
+echo "[qwen-voice] Ready marker written to ${WORKSPACE}/logs/qwen_voice_ready.ok"
+
 # ------------------------------------------------------------------------------
 # 7) Final instructions
 # ------------------------------------------------------------------------------
 echo
 echo "[qwen-voice] Provisioning complete: $(date -Is)"
+echo
+echo "[qwen-voice] Recommended validation:"
+echo "  nvidia-smi"
+echo "  python -c \"import torch; print(torch.__version__, torch.version.cuda, torch.cuda.is_available())\""
+echo "[qwen-voice] If cuda_available is False, update the host NVIDIA driver or reinstall a PyTorch build compatible with the current driver."
 echo
 echo "[qwen-voice] VoiceDesign test command:"
 echo "  source /venv/main/bin/activate"
@@ -162,7 +274,7 @@ echo "  from qwen_tts import Qwen3TTSModel"
 echo "  model = Qwen3TTSModel.from_pretrained("
 echo "      '/workspace/models/Qwen3-TTS-12Hz-1.7B-VoiceDesign',"
 echo "      device_map='cuda:0',"
-echo "      dtype=torch.bfloat16,"
+echo "      dtype=torch.float16,"
 echo "  )"
 echo "  wavs, sr = model.generate_voice_design("
 echo "      text='Hola, esto es una prueba de voz con Qwen TTS en Vast.ai.',"
@@ -182,7 +294,7 @@ echo "  from qwen_tts import Qwen3TTSModel"
 echo "  model = Qwen3TTSModel.from_pretrained("
 echo "      '/workspace/models/Qwen3-TTS-12Hz-1.7B-CustomVoice',"
 echo "      device_map='cuda:0',"
-echo "      dtype=torch.bfloat16,"
+echo "      dtype=torch.float16,"
 echo "  )"
 echo "  wavs, sr = model.generate_custom_voice("
 echo "      text='Hola, esta es una prueba con una voz predefinida de Qwen TTS.',"
@@ -203,7 +315,7 @@ echo "  from qwen_tts import Qwen3TTSModel"
 echo "  model = Qwen3TTSModel.from_pretrained("
 echo "      '/workspace/models/Qwen3-TTS-12Hz-1.7B-Base',"
 echo "      device_map='cuda:0',"
-echo "      dtype=torch.bfloat16,"
+echo "      dtype=torch.float16,"
 echo "  )"
 echo "  wavs, sr = model.generate_voice_clone("
 echo "      text='Hola, esta es una prueba de clonacion de voz con Qwen TTS.',"
