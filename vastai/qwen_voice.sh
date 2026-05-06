@@ -5,7 +5,8 @@ set -euo pipefail
 # Qwen3-TTS Vast.ai Provisioning Script
 # - Based on higsg.sh structure
 # - Installs Qwen TTS runtime and required Python packages
-# - Downloads Qwen3 TTS models for voice design, custom voice, and cloning
+# - Downloads only the Qwen3 TTS Base model by default for voice cloning
+# - VoiceDesign / CustomVoice can be re-enabled later if needed
 # - Validates CUDA/PyTorch compatibility and optionally installs flash-attn
 # - Assumes host NVIDIA driver must match installed PyTorch CUDA build
 # - No need for wan2gp, TTS server on :8080, or Jupyter for this integration
@@ -141,12 +142,12 @@ fi
 # ------------------------------------------------------------------------------
 # 5) Download models (idempotent)
 # ------------------------------------------------------------------------------
-VOICE_DESIGN_MODEL_ID="Qwen/Qwen3-TTS-12Hz-1.7B-VoiceDesign"
-CUSTOM_VOICE_MODEL_ID="Qwen/Qwen3-TTS-12Hz-1.7B-CustomVoice"
+# VOICE_DESIGN_MODEL_ID="Qwen/Qwen3-TTS-12Hz-1.7B-VoiceDesign"
+# CUSTOM_VOICE_MODEL_ID="Qwen/Qwen3-TTS-12Hz-1.7B-CustomVoice"
 VOICE_CLONE_MODEL_ID="Qwen/Qwen3-TTS-12Hz-1.7B-Base"
 MODELS_DIR="${WORKSPACE}/models"
-VOICE_DESIGN_MODEL_DIR="${MODELS_DIR}/Qwen3-TTS-12Hz-1.7B-VoiceDesign"
-CUSTOM_VOICE_MODEL_DIR="${MODELS_DIR}/Qwen3-TTS-12Hz-1.7B-CustomVoice"
+# VOICE_DESIGN_MODEL_DIR="${MODELS_DIR}/Qwen3-TTS-12Hz-1.7B-VoiceDesign"
+# CUSTOM_VOICE_MODEL_DIR="${MODELS_DIR}/Qwen3-TTS-12Hz-1.7B-CustomVoice"
 VOICE_CLONE_MODEL_DIR="${MODELS_DIR}/Qwen3-TTS-12Hz-1.7B-Base"
 
 mkdir -p "$MODELS_DIR"
@@ -167,8 +168,9 @@ download_if_missing() {
   echo "$repo_id" > "$marker"
 }
 
-download_if_missing "$VOICE_DESIGN_MODEL_ID" "$VOICE_DESIGN_MODEL_DIR" "${VOICE_DESIGN_MODEL_DIR}/.download_ok"
-download_if_missing "$CUSTOM_VOICE_MODEL_ID" "$CUSTOM_VOICE_MODEL_DIR" "${CUSTOM_VOICE_MODEL_DIR}/.download_ok"
+# Clone-only provisioning by default:
+# download_if_missing "$VOICE_DESIGN_MODEL_ID" "$VOICE_DESIGN_MODEL_DIR" "${VOICE_DESIGN_MODEL_DIR}/.download_ok"
+# download_if_missing "$CUSTOM_VOICE_MODEL_ID" "$CUSTOM_VOICE_MODEL_DIR" "${CUSTOM_VOICE_MODEL_DIR}/.download_ok"
 download_if_missing "$VOICE_CLONE_MODEL_ID" "$VOICE_CLONE_MODEL_DIR" "${VOICE_CLONE_MODEL_DIR}/.download_ok"
 
 # ------------------------------------------------------------------------------
@@ -185,37 +187,8 @@ if torch.cuda.is_available():
 
 from qwen_tts import Qwen3TTSModel
 print("qwen_tts import: ok")
-print("voice_design_model:", "Qwen/Qwen3-TTS-12Hz-1.7B-VoiceDesign")
-print("custom_voice_model:", "Qwen/Qwen3-TTS-12Hz-1.7B-CustomVoice")
 print("voice_clone_model:", "Qwen/Qwen3-TTS-12Hz-1.7B-Base")
 print("smoke_test: ok")
-PY
-
-echo "[qwen-voice] Running real VoiceDesign audio smoke test"
-python - <<'PY'
-import os
-import torch
-import soundfile as sf
-from qwen_tts import Qwen3TTSModel
-
-device = "cuda" if torch.cuda.is_available() else "cpu"
-dtype = torch.float16 if device == "cuda" else torch.float32
-attn = "sdpa" if device == "cuda" else "eager"
-model = Qwen3TTSModel.from_pretrained(
-    "/workspace/models/Qwen3-TTS-12Hz-1.7B-VoiceDesign",
-    device_map=device,
-    dtype=dtype,
-    attn_implementation=attn,
-)
-wavs, sr = model.generate_voice_design(
-    text="Hola, esto es una prueba de voz con Qwen TTS en Vast.ai.",
-    language="Spanish",
-    instruct="Voz natural, clara y cercana, con tono profesional y amable.",
-    non_streaming_mode=True,
-)
-out_path = "/workspace/qwen_voice_design_test.wav"
-sf.write(out_path, wavs[0], sr)
-print("voice_design_smoke:", out_path, os.path.getsize(out_path))
 PY
 
 if [ -f "/workspace/reference_voice.wav" ]; then
@@ -263,47 +236,6 @@ echo "[qwen-voice] Recommended validation:"
 echo "  nvidia-smi"
 echo "  python -c \"import torch; print(torch.__version__, torch.version.cuda, torch.cuda.is_available())\""
 echo "[qwen-voice] If cuda_available is False, update the host NVIDIA driver or reinstall a PyTorch build compatible with the current driver."
-echo
-echo "[qwen-voice] VoiceDesign test command:"
-echo "  source /venv/main/bin/activate"
-echo "  export HF_HOME=/workspace/hf"
-echo "  python - <<'PY'"
-echo "  import torch"
-echo "  import soundfile as sf"
-echo "  from qwen_tts import Qwen3TTSModel"
-echo "  model = Qwen3TTSModel.from_pretrained("
-echo "      '/workspace/models/Qwen3-TTS-12Hz-1.7B-VoiceDesign',"
-echo "      device_map='cuda:0',"
-echo "      dtype=torch.float16,"
-echo "  )"
-echo "  wavs, sr = model.generate_voice_design("
-echo "      text='Hola, esto es una prueba de voz con Qwen TTS en Vast.ai.',"
-echo "      language='Spanish',"
-echo "      instruct='Voz natural, clara y cercana, con tono profesional y amable.'"
-echo "  )"
-echo "  sf.write('/workspace/qwen_voice_design_test.wav', wavs[0], sr)"
-echo "  PY"
-echo
-echo "[qwen-voice] CustomVoice test command:"
-echo "  source /venv/main/bin/activate"
-echo "  export HF_HOME=/workspace/hf"
-echo "  python - <<'PY'"
-echo "  import torch"
-echo "  import soundfile as sf"
-echo "  from qwen_tts import Qwen3TTSModel"
-echo "  model = Qwen3TTSModel.from_pretrained("
-echo "      '/workspace/models/Qwen3-TTS-12Hz-1.7B-CustomVoice',"
-echo "      device_map='cuda:0',"
-echo "      dtype=torch.float16,"
-echo "  )"
-echo "  wavs, sr = model.generate_custom_voice("
-echo "      text='Hola, esta es una prueba con una voz predefinida de Qwen TTS.',"
-echo "      language='Spanish',"
-echo "      speaker='Chelsie',"
-echo "      instruct='Tono calido, natural y seguro.'"
-echo "  )"
-echo "  sf.write('/workspace/qwen_custom_voice_test.wav', wavs[0], sr)"
-echo "  PY"
 echo
 echo "[qwen-voice] VoiceClone test command:"
 echo "  source /venv/main/bin/activate"
