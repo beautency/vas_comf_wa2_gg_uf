@@ -98,7 +98,13 @@ python -m pip uninstall -y \
   tensorflow-io-gcs-filesystem || true
 
 echo "[qwen-voice] Installing Qwen TTS runtime and support packages"
-python -m pip install -U qwen-tts soundfile transformers accelerate ninja packaging
+python -m pip install -U \
+  "qwen-tts==0.1.1" \
+  "transformers==4.57.3" \
+  "accelerate==1.12.0" \
+  soundfile \
+  ninja \
+  packaging
 
 echo "[qwen-voice] Note: torch is expected to already be installed in /venv/main with a host-compatible CUDA build."
 echo "[qwen-voice] If CUDA is unavailable, update the NVIDIA driver or reinstall PyTorch with a compatible CUDA version."
