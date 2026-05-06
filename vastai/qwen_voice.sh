@@ -5,7 +5,7 @@ set -euo pipefail
 # Qwen3-TTS Vast.ai Provisioning Script
 # - Based on higsg.sh structure
 # - Installs qwen-tts and persistent Hugging Face cache
-# - Downloads the Qwen3 TTS VoiceDesign model for speech generation
+# - Downloads Qwen3 TTS models for voice design, custom voice, and cloning
 # ------------------------------------------------------------------------------
 
 echo "[qwen-voice] Provisioning start: $(date -Is)"
@@ -96,9 +96,13 @@ fi
 # ------------------------------------------------------------------------------
 # 5) Download models (idempotent)
 # ------------------------------------------------------------------------------
-MODEL_ID="Qwen/Qwen3-TTS-12Hz-1.7B-VoiceDesign"
+VOICE_DESIGN_MODEL_ID="Qwen/Qwen3-TTS-12Hz-1.7B-VoiceDesign"
+CUSTOM_VOICE_MODEL_ID="Qwen/Qwen3-TTS-12Hz-1.7B-CustomVoice"
+VOICE_CLONE_MODEL_ID="Qwen/Qwen3-TTS-12Hz-1.7B-Base"
 MODELS_DIR="${WORKSPACE}/models"
-MODEL_DIR="${MODELS_DIR}/Qwen3-TTS-12Hz-1.7B-VoiceDesign"
+VOICE_DESIGN_MODEL_DIR="${MODELS_DIR}/Qwen3-TTS-12Hz-1.7B-VoiceDesign"
+CUSTOM_VOICE_MODEL_DIR="${MODELS_DIR}/Qwen3-TTS-12Hz-1.7B-CustomVoice"
+VOICE_CLONE_MODEL_DIR="${MODELS_DIR}/Qwen3-TTS-12Hz-1.7B-Base"
 
 mkdir -p "$MODELS_DIR"
 
@@ -118,7 +122,9 @@ download_if_missing() {
   echo "$repo_id" > "$marker"
 }
 
-download_if_missing "$MODEL_ID" "$MODEL_DIR" "${MODEL_DIR}/.download_ok"
+download_if_missing "$VOICE_DESIGN_MODEL_ID" "$VOICE_DESIGN_MODEL_DIR" "${VOICE_DESIGN_MODEL_DIR}/.download_ok"
+download_if_missing "$CUSTOM_VOICE_MODEL_ID" "$CUSTOM_VOICE_MODEL_DIR" "${CUSTOM_VOICE_MODEL_DIR}/.download_ok"
+download_if_missing "$VOICE_CLONE_MODEL_ID" "$VOICE_CLONE_MODEL_DIR" "${VOICE_CLONE_MODEL_DIR}/.download_ok"
 
 # ------------------------------------------------------------------------------
 # 6) Smoke test
@@ -134,7 +140,9 @@ if torch.cuda.is_available():
 
 from qwen_tts import Qwen3TTSModel
 print("qwen_tts import: ok")
-print("model_path:", "Qwen/Qwen3-TTS-12Hz-1.7B-VoiceDesign")
+print("voice_design_model:", "Qwen/Qwen3-TTS-12Hz-1.7B-VoiceDesign")
+print("custom_voice_model:", "Qwen/Qwen3-TTS-12Hz-1.7B-CustomVoice")
+print("voice_clone_model:", "Qwen/Qwen3-TTS-12Hz-1.7B-Base")
 print("smoke_test: ok")
 PY
 
@@ -144,7 +152,7 @@ PY
 echo
 echo "[qwen-voice] Provisioning complete: $(date -Is)"
 echo
-echo "[qwen-voice] Test command:"
+echo "[qwen-voice] VoiceDesign test command:"
 echo "  source /venv/main/bin/activate"
 echo "  export HF_HOME=/workspace/hf"
 echo "  python - <<'PY'"
@@ -161,7 +169,49 @@ echo "      text='Hola, esto es una prueba de voz con Qwen TTS en Vast.ai.',"
 echo "      language='Spanish',"
 echo "      instruct='Voz natural, clara y cercana, con tono profesional y amable.'"
 echo "  )"
-echo "  sf.write('/workspace/qwen_voice_test.wav', wavs[0], sr)"
+echo "  sf.write('/workspace/qwen_voice_design_test.wav', wavs[0], sr)"
+echo "  PY"
+echo
+echo "[qwen-voice] CustomVoice test command:"
+echo "  source /venv/main/bin/activate"
+echo "  export HF_HOME=/workspace/hf"
+echo "  python - <<'PY'"
+echo "  import torch"
+echo "  import soundfile as sf"
+echo "  from qwen_tts import Qwen3TTSModel"
+echo "  model = Qwen3TTSModel.from_pretrained("
+echo "      '/workspace/models/Qwen3-TTS-12Hz-1.7B-CustomVoice',"
+echo "      device_map='cuda:0',"
+echo "      dtype=torch.bfloat16,"
+echo "  )"
+echo "  wavs, sr = model.generate_custom_voice("
+echo "      text='Hola, esta es una prueba con una voz predefinida de Qwen TTS.',"
+echo "      language='Spanish',"
+echo "      speaker='Chelsie',"
+echo "      instruct='Tono calido, natural y seguro.'"
+echo "  )"
+echo "  sf.write('/workspace/qwen_custom_voice_test.wav', wavs[0], sr)"
+echo "  PY"
+echo
+echo "[qwen-voice] VoiceClone test command:"
+echo "  source /venv/main/bin/activate"
+echo "  export HF_HOME=/workspace/hf"
+echo "  python - <<'PY'"
+echo "  import torch"
+echo "  import soundfile as sf"
+echo "  from qwen_tts import Qwen3TTSModel"
+echo "  model = Qwen3TTSModel.from_pretrained("
+echo "      '/workspace/models/Qwen3-TTS-12Hz-1.7B-Base',"
+echo "      device_map='cuda:0',"
+echo "      dtype=torch.bfloat16,"
+echo "  )"
+echo "  wavs, sr = model.generate_voice_clone("
+echo "      text='Hola, esta es una prueba de clonacion de voz con Qwen TTS.',"
+echo "      ref_audio='/workspace/reference_voice.wav',"
+echo "      ref_text='Texto de referencia que corresponde al audio de muestra.',"
+echo "      language='Spanish'"
+echo "  )"
+echo "  sf.write('/workspace/qwen_voice_clone_test.wav', wavs[0], sr)"
 echo "  PY"
 echo
 echo "[qwen-voice] Logs: $LOG_FILE"
