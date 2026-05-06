@@ -83,8 +83,8 @@ sudo apt-get install -y --no-install-recommends \
 # ------------------------------------------------------------------------------
 # 3) Python deps
 # ------------------------------------------------------------------------------
-echo "[qwen-voice] Upgrading pip"
-python -m pip install --upgrade pip setuptools wheel
+echo "[qwen-voice] Upgrading pip toolchain safely"
+python -m pip install --upgrade "pip<27" "setuptools>=70,<82" "wheel<0.48"
 
 echo "[qwen-voice] Installing Qwen TTS runtime and support packages"
 python -m pip install -U qwen-tts soundfile transformers accelerate ninja packaging
