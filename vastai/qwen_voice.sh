@@ -3,7 +3,7 @@ set -euo pipefail
 
 # ------------------------------------------------------------------------------
 # Qwen3-TTS + Coqui VC Vast.ai Provisioning Script
-# - Keeps Qwen and Coqui in separate virtualenvs
+# - Uses a single shared virtualenv in /venv/main
 # - Fails hard if Qwen is unusable
 # - Optionally fails or degrades clearly if Coqui VC models are unusable
 # ------------------------------------------------------------------------------
@@ -32,12 +32,11 @@ QWEN_TOKENIZER_REPO="Qwen/Qwen3-TTS-Tokenizer-12Hz"
 FREEVC_MODEL_NAME="${FREEVC_MODEL_NAME:-voice_conversion_models/multilingual/vctk/freevc24}"
 OPENVOICE_V2_MODEL_NAME="${OPENVOICE_V2_MODEL_NAME:-voice_conversion_models/multilingual/multi-dataset/openvoice_v2}"
 TORCH_INDEX_URL="${TORCH_INDEX_URL:-https://download.pytorch.org/whl/cu121}"
-COQUI_VENV="${COQUI_VENV:-/venv/coqui_freevc}"
 COQUI_REQUIRED_FOR_QWEN_FREEVC_REMOTE="${COQUI_REQUIRED_FOR_QWEN_FREEVC_REMOTE:-1}"
 QWEN_MAIN_PYTHON="/venv/main/bin/python"
 QWEN_MAIN_PIP="/venv/main/bin/pip"
-COQUI_PYTHON="${COQUI_VENV}/bin/python"
-COQUI_PIP="${COQUI_VENV}/bin/pip"
+COQUI_PYTHON="${QWEN_MAIN_PYTHON}"
+COQUI_PIP="${QWEN_MAIN_PIP}"
 
 fail_qwen() {
   echo "[qwen-voice] qwen_runtime_error: $1"
@@ -197,21 +196,11 @@ PY
 echo "[qwen-voice] qwen_runtime_ready"
 
 COQUI_REMOTE_ENABLE_STATE=1
-echo "[qwen-voice] coqui_runtime_venv_start path=$COQUI_VENV"
-python3 -m venv "$COQUI_VENV" || fail_coqui "could not create $COQUI_VENV"
-
-if [ ! -f "$COQUI_PYTHON" ]; then
-  fail_coqui "missing $COQUI_PYTHON after venv creation"
-fi
-
-"$COQUI_PIP" install --upgrade "pip<27" "setuptools>=70,<82" "wheel<0.48" || fail_coqui "failed upgrading coqui pip toolchain"
+echo "[qwen-voice] coqui_runtime_shared_venv_start path=/venv/main"
 
 echo "[qwen-voice] coqui_runtime_packages_start"
 "$COQUI_PIP" install -U \
-  --index-url "$TORCH_INDEX_URL" \
-  torch torchvision torchaudio || fail_coqui "failed installing torch in coqui venv"
-"$COQUI_PIP" install -U \
-  "TTS>=0.22,<0.23" \
+  "coqui-tts==0.27.5" \
   soundfile || fail_coqui "failed installing Coqui TTS packages"
 echo "[qwen-voice] coqui_runtime_packages_ok"
 
@@ -265,6 +254,21 @@ if not out_path.exists() or out_path.stat().st_size <= 0:
 print('freevc_conversion_smoke: ok', out)
 PY
 
+echo "[qwen-voice] qwen_runtime_post_coqui_model_smoke_start"
+"$QWEN_MAIN_PYTHON" - <<'PY' || fail_coqui "Qwen load smoke failed after Coqui install"
+import torch
+from qwen_tts import Qwen3TTSModel
+
+print('qwen_runtime_post_coqui_gpu_name:', torch.cuda.get_device_name(0))
+model = Qwen3TTSModel.from_pretrained(
+    'Qwen/Qwen3-TTS-12Hz-1.7B-Base',
+    device_map='cuda:0',
+    dtype=torch.bfloat16,
+    attn_implementation='sdpa',
+)
+print('qwen_runtime_post_coqui_model_load_smoke: ok', type(model).__name__)
+PY
+
 echo "[qwen-voice] coqui_runtime_ready"
 
 cat >/etc/profile.d/qwen_remote.sh <<EOF
@@ -294,6 +298,6 @@ echo "[qwen-voice] Ready marker written to ${WORKSPACE}/logs/qwen_voice_ready.ok
 echo
 echo "[qwen-voice] Provisioning complete: $(date -Is)"
 echo "[qwen-voice] qwen_runtime_python=${QWEN_MAIN_PYTHON}"
-echo "[qwen-voice] coqui_runtime_python=${COQUI_PYTHON}"
+echo "[qwen-voice] coqui_runtime_python=${COQUI_PYTHON} (shared)"
 echo "[qwen-voice] coqui_remote_enable=${COQUI_REMOTE_ENABLE_STATE}"
 echo "[qwen-voice] logs=${LOG_FILE}"
