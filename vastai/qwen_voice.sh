@@ -33,6 +33,7 @@ QWEN_BASE_REPO="Qwen/Qwen3-TTS-12Hz-1.7B-Base"
 QWEN_CUSTOM_REPO="Qwen/Qwen3-TTS-12Hz-1.7B-CustomVoice"
 QWEN_VOICE_DESIGN_REPO="Qwen/Qwen3-TTS-12Hz-1.7B-VoiceDesign"
 QWEN_TOKENIZER_REPO="Qwen/Qwen3-TTS-Tokenizer-12Hz"
+TORCH_INDEX_URL="${TORCH_INDEX_URL:-https://download.pytorch.org/whl/cu121}"
 
 # ------------------------------------------------------------------------------
 # 1) Activate venv
@@ -47,27 +48,6 @@ fi
 
 python -V || true
 python -m pip -V || true
-
-echo "[qwen-voice] Checking NVIDIA / PyTorch compatibility"
-if command -v nvidia-smi >/dev/null 2>&1; then
-  nvidia-smi || true
-else
-  echo "[qwen-voice] WARNING: nvidia-smi not available"
-fi
-
-python - <<'PY'
-import sys
-try:
-    import torch
-    print('torch:', torch.__version__)
-    print('torch.version.cuda:', torch.version.cuda)
-    print('cuda_available:', torch.cuda.is_available())
-    if not torch.cuda.is_available():
-        raise RuntimeError("CUDA is required for this GPU-only Qwen node, but torch.cuda.is_available() is false.")
-except Exception as exc:
-    print('torch check failed:', exc)
-    sys.exit(1)
-PY
 
 # ------------------------------------------------------------------------------
 # 2) System dependencies
@@ -90,6 +70,31 @@ sudo apt-get install -y --no-install-recommends \
 # ------------------------------------------------------------------------------
 echo "[qwen-voice] Upgrading pip toolchain safely"
 python -m pip install --upgrade "pip<27" "setuptools>=70,<82" "wheel<0.48"
+
+echo "[qwen-voice] Installing explicit GPU PyTorch build"
+python -m pip uninstall -y torch torchvision torchaudio || true
+python -m pip install --index-url "$TORCH_INDEX_URL" torch torchvision torchaudio
+
+echo "[qwen-voice] Checking NVIDIA / PyTorch compatibility"
+if command -v nvidia-smi >/dev/null 2>&1; then
+  nvidia-smi || true
+else
+  echo "[qwen-voice] WARNING: nvidia-smi not available"
+fi
+
+python - <<'PY'
+import sys
+try:
+    import torch
+    print('torch:', torch.__version__)
+    print('torch.version.cuda:', torch.version.cuda)
+    print('cuda_available:', torch.cuda.is_available())
+    if not torch.cuda.is_available():
+        raise RuntimeError("CUDA is required for this GPU-only Qwen node, but torch.cuda.is_available() is false.")
+except Exception as exc:
+    print('torch check failed:', exc)
+    sys.exit(1)
+PY
 
 echo "[qwen-voice] Disabling TensorFlow for Transformers"
 export TRANSFORMERS_NO_TF=1
@@ -122,8 +127,8 @@ PY
 echo "[qwen-voice] Note: torch is expected to already be installed in /venv/main with a host-compatible CUDA build."
 echo "[qwen-voice] If CUDA is unavailable, update the NVIDIA driver or reinstall PyTorch with a compatible CUDA version."
 
-echo "[qwen-voice] Installing flash-attn (GPU accelerator for faster inference)"
-python -m pip install -U flash-attn --no-build-isolation || echo "[qwen-voice] WARN: flash-attn install failed, continuing with sdpa/eager"
+echo "[qwen-voice] Optional flash-attn install"
+python -m pip install -U flash-attn --no-build-isolation || echo "[qwen-voice] WARN: flash-attn install failed, keeping sdpa as runtime default"
 
 # ------------------------------------------------------------------------------
 # 4) Hugging Face CLI and persistent cache
