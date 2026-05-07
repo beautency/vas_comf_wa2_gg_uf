@@ -2,10 +2,10 @@
 set -euo pipefail
 
 # ------------------------------------------------------------------------------
-# Qwen3-TTS + Coqui FreeVC24 Vast.ai Provisioning Script
+# Qwen3-TTS + Coqui VC Vast.ai Provisioning Script
 # - Keeps Qwen and Coqui in separate virtualenvs
 # - Fails hard if Qwen is unusable
-# - Optionally fails or degrades clearly if Coqui/FreeVC24 is unusable
+# - Optionally fails or degrades clearly if Coqui VC models are unusable
 # ------------------------------------------------------------------------------
 
 echo "[qwen-voice] Provisioning start: $(date -Is)"
@@ -30,6 +30,7 @@ QWEN_CUSTOM_REPO="Qwen/Qwen3-TTS-12Hz-1.7B-CustomVoice"
 QWEN_VOICE_DESIGN_REPO="Qwen/Qwen3-TTS-12Hz-1.7B-VoiceDesign"
 QWEN_TOKENIZER_REPO="Qwen/Qwen3-TTS-Tokenizer-12Hz"
 FREEVC_MODEL_NAME="${FREEVC_MODEL_NAME:-voice_conversion_models/multilingual/vctk/freevc24}"
+OPENVOICE_V2_MODEL_NAME="${OPENVOICE_V2_MODEL_NAME:-voice_conversion_models/multilingual/multi-dataset/openvoice_v2}"
 TORCH_INDEX_URL="${TORCH_INDEX_URL:-https://download.pytorch.org/whl/cu121}"
 COQUI_VENV="${COQUI_VENV:-/venv/coqui_freevc}"
 COQUI_REQUIRED_FOR_QWEN_FREEVC_REMOTE="${COQUI_REQUIRED_FOR_QWEN_FREEVC_REMOTE:-1}"
@@ -234,6 +235,14 @@ vc = TTS(model_name=model_name, progress_bar=False, gpu=True)
 print('freevc_load_smoke: ok', type(vc).__name__)
 PY
 
+echo "[qwen-voice] openvoice_v2_load_smoke_start"
+"$COQUI_PYTHON" - <<'PY' || fail_coqui "OpenVoice v2 load smoke failed"
+from TTS.api import TTS
+model_name = 'voice_conversion_models/multilingual/multi-dataset/openvoice_v2'
+vc = TTS(model_name=model_name, progress_bar=False, gpu=True)
+print('openvoice_v2_load_smoke: ok', type(vc).__name__)
+PY
+
 echo "[qwen-voice] freevc_conversion_smoke_start"
 export SOURCE_WAV="${WORKSPACE}/freevc_source.wav"
 export TARGET_WAV="${WORKSPACE}/freevc_target.wav"
@@ -274,6 +283,7 @@ export QWEN_REMOTE_MODEL_DIR_VOICE_DESIGN=Qwen/Qwen3-TTS-12Hz-1.7B-VoiceDesign
 export COQUI_REMOTE_ENABLE=${COQUI_REMOTE_ENABLE_STATE}
 export COQUI_REMOTE_PYTHON=${COQUI_PYTHON}
 export FREEVC_MODEL_NAME=${FREEVC_MODEL_NAME}
+export OPENVOICE_V2_MODEL_NAME=${OPENVOICE_V2_MODEL_NAME}
 EOF
 chmod 644 /etc/profile.d/qwen_remote.sh
 echo "[qwen-voice] runtime_env_persisted=/etc/profile.d/qwen_remote.sh"
