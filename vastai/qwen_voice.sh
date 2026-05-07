@@ -2,10 +2,10 @@
 set -euo pipefail
 
 # ------------------------------------------------------------------------------
-# Qwen3-TTS + Higgs Audio Vast.ai Provisioning Script
+# Qwen3-TTS Vast.ai Provisioning Script
 # - Based on higsg.sh structure
-# - Installs Qwen TTS runtime and Higgs Audio runtime support
-# - Downloads Qwen and Higgs models persistently for a single remote
+# - Installs Qwen TTS runtime and required Python packages
+# - Downloads only the Qwen3 TTS Base model by default for voice cloning
 # - VoiceDesign / CustomVoice can be re-enabled later if needed
 # - Validates CUDA/PyTorch compatibility and optionally installs flash-attn
 # - Assumes host NVIDIA driver must match installed PyTorch CUDA build
@@ -87,51 +87,14 @@ sudo apt-get install -y --no-install-recommends \
 echo "[qwen-voice] Upgrading pip toolchain safely"
 python -m pip install --upgrade "pip<27" "setuptools>=70,<82" "wheel<0.48"
 
-echo "[qwen-voice] Disabling TensorFlow for Transformers"
-export TRANSFORMERS_NO_TF=1
-export USE_TF=0
-python -m pip uninstall -y \
-  tensorflow \
-  tensorflow-cpu \
-  tensorflow-gpu \
-  tensorflow-intel \
-  tensorflow-io-gcs-filesystem || true
-
 echo "[qwen-voice] Installing Qwen TTS runtime and support packages"
-python -m pip install -U \
-  "qwen-tts==0.1.1" \
-  "transformers==4.57.3" \
-  "accelerate==1.12.0" \
-  soundfile \
-  ninja \
-  packaging
+python -m pip install -U qwen-tts soundfile transformers accelerate ninja packaging
 
 echo "[qwen-voice] Note: torch is expected to already be installed in /venv/main with a host-compatible CUDA build."
 echo "[qwen-voice] If CUDA is unavailable, update the NVIDIA driver or reinstall PyTorch with a compatible CUDA version."
 
 echo "[qwen-voice] Installing flash-attn (GPU accelerator for faster inference)"
 python -m pip install -U flash-attn --no-build-isolation || echo "[qwen-voice] WARN: flash-attn install failed, continuing with sdpa/eager"
-
-# ----------------------------------------------------------------------------
-# 4) Clone / install Higgs Audio
-# ------------------------------------------------------------------------------
-HIGGS_DIR="${WORKSPACE}/higgs-audio"
-
-if [ -d "${HIGGS_DIR}/.git" ]; then
-  echo "[qwen-voice] Updating Higgs Audio repo"
-  cd "$HIGGS_DIR"
-  git fetch --all --prune
-  git pull --rebase
-else
-  echo "[qwen-voice] Cloning Higgs Audio repo"
-  git clone https://github.com/boson-ai/higgs-audio.git "$HIGGS_DIR"
-  cd "$HIGGS_DIR"
-fi
-
-echo "[qwen-voice] Installing Higgs Audio requirements"
-python -m pip install -r requirements.txt
-python -m pip install -e .
-cd "$WORKSPACE"
 
 # ------------------------------------------------------------------------------
 # 4) Hugging Face CLI and persistent cache
@@ -165,8 +128,6 @@ export QWEN_REMOTE_DTYPE=float16
 export QWEN_REMOTE_MODEL_DIR_BASE=/workspace/models/Qwen3-TTS-12Hz-1.7B-Base
 export QWEN_REMOTE_MODEL_DIR_CUSTOM_VOICE=/workspace/models/Qwen3-TTS-12Hz-1.7B-CustomVoice
 export QWEN_REMOTE_MODEL_DIR_VOICE_DESIGN=/workspace/models/Qwen3-TTS-12Hz-1.7B-VoiceDesign
-export HIGGS_MODEL_DIR=/workspace/models/higgs-audio-v2-generation-3B-base
-export HIGGS_TOKENIZER_DIR=/workspace/models/higgs-audio-v2-tokenizer
 EOF
 chmod 644 /etc/profile.d/qwen_remote.sh
 echo "[qwen-voice] Persisted Qwen runtime env to /etc/profile.d/qwen_remote.sh"
@@ -184,14 +145,10 @@ fi
 # VOICE_DESIGN_MODEL_ID="Qwen/Qwen3-TTS-12Hz-1.7B-VoiceDesign"
 # CUSTOM_VOICE_MODEL_ID="Qwen/Qwen3-TTS-12Hz-1.7B-CustomVoice"
 VOICE_CLONE_MODEL_ID="Qwen/Qwen3-TTS-12Hz-1.7B-Base"
-HIGGS_MODEL_ID="bosonai/higgs-audio-v2-generation-3B-base"
-HIGGS_TOKENIZER_ID="bosonai/higgs-audio-v2-tokenizer"
 MODELS_DIR="${WORKSPACE}/models"
 # VOICE_DESIGN_MODEL_DIR="${MODELS_DIR}/Qwen3-TTS-12Hz-1.7B-VoiceDesign"
 # CUSTOM_VOICE_MODEL_DIR="${MODELS_DIR}/Qwen3-TTS-12Hz-1.7B-CustomVoice"
 VOICE_CLONE_MODEL_DIR="${MODELS_DIR}/Qwen3-TTS-12Hz-1.7B-Base"
-HIGGS_MODEL_DIR="${MODELS_DIR}/higgs-audio-v2-generation-3B-base"
-HIGGS_TOKENIZER_DIR="${MODELS_DIR}/higgs-audio-v2-tokenizer"
 
 mkdir -p "$MODELS_DIR"
 
@@ -215,11 +172,9 @@ download_if_missing() {
 # download_if_missing "$VOICE_DESIGN_MODEL_ID" "$VOICE_DESIGN_MODEL_DIR" "${VOICE_DESIGN_MODEL_DIR}/.download_ok"
 # download_if_missing "$CUSTOM_VOICE_MODEL_ID" "$CUSTOM_VOICE_MODEL_DIR" "${CUSTOM_VOICE_MODEL_DIR}/.download_ok"
 download_if_missing "$VOICE_CLONE_MODEL_ID" "$VOICE_CLONE_MODEL_DIR" "${VOICE_CLONE_MODEL_DIR}/.download_ok"
-download_if_missing "$HIGGS_MODEL_ID" "$HIGGS_MODEL_DIR" "${HIGGS_MODEL_DIR}/.download_ok"
-download_if_missing "$HIGGS_TOKENIZER_ID" "$HIGGS_TOKENIZER_DIR" "${HIGGS_TOKENIZER_DIR}/.download_ok"
 
 # ------------------------------------------------------------------------------
-# 7) Smoke test
+# 6) Smoke test
 # ------------------------------------------------------------------------------
 echo "[qwen-voice] Running smoke test"
 
@@ -234,25 +189,6 @@ from qwen_tts import Qwen3TTSModel
 print("qwen_tts import: ok")
 print("voice_clone_model:", "Qwen/Qwen3-TTS-12Hz-1.7B-Base")
 print("smoke_test: ok")
-PY
-
-echo "[qwen-voice] Running Higgs Audio import check"
-python - <<'PY'
-import importlib
-candidates = [
-    'higgs_audio',
-    'bosonai',
-    'bosonai.higgs_audio',
-    'higgs_audio_v2',
-]
-found = []
-for name in candidates:
-    try:
-        module = importlib.import_module(name)
-        found.append(name)
-    except Exception:
-        pass
-print('higgs_import_candidates:', found)
 PY
 
 if [ -f "/workspace/reference_voice.wav" ]; then
@@ -321,16 +257,5 @@ echo "      language='Spanish'"
 echo "  )"
 echo "  sf.write('/workspace/qwen_voice_clone_test.wav', wavs[0], sr)"
 echo "  PY"
-echo
-echo "[qwen-voice] Higgs Audio test command:"
-echo "  source /venv/main/bin/activate"
-echo "  export TRANSFORMERS_NO_TF=1"
-echo "  export USE_TF=0"
-echo "  export HF_HOME=/workspace/hf"
-echo "  cd /workspace/higgs-audio"
-echo "  python examples/generation.py \"
-echo "    --transcript \"Bienvenidos a Registro Cero.\" \"
-echo "    --temperature 0.3 \"
-echo "    --out_path /workspace/higgs_prueba.wav"
 echo
 echo "[qwen-voice] Logs: $LOG_FILE"
