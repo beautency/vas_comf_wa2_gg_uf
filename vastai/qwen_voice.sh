@@ -3,13 +3,10 @@ set -euo pipefail
 
 # ------------------------------------------------------------------------------
 # Qwen3-TTS Vast.ai Provisioning Script
-# - Based on higsg.sh structure
-# - Installs Qwen TTS runtime and required Python packages
-# - Downloads only the Qwen3 TTS Base model by default for voice cloning
-# - VoiceDesign / CustomVoice can be re-enabled later if needed
-# - Validates CUDA/PyTorch compatibility and optionally installs flash-attn
-# - Assumes host NVIDIA driver must match installed PyTorch CUDA build
-# - No need for wan2gp, TTS server on :8080, or Jupyter for this integration
+# - GPU-only provisioning for Qwen3-TTS remote generation
+# - Pins runtime versions known to work together
+# - Uses Hugging Face repo IDs as runtime model refs
+# - Fails fast during provisioning if CUDA/PyTorch/model load is not usable
 # ------------------------------------------------------------------------------
 
 echo "[qwen-voice] Provisioning start: $(date -Is)"
@@ -31,6 +28,11 @@ LOG_FILE="${LOG_DIR}/provision_qwen_voice.log"
 exec > >(tee -a "$LOG_FILE") 2>&1
 
 echo "[qwen-voice] WORKSPACE=$WORKSPACE"
+
+QWEN_BASE_REPO="Qwen/Qwen3-TTS-12Hz-1.7B-Base"
+QWEN_CUSTOM_REPO="Qwen/Qwen3-TTS-12Hz-1.7B-CustomVoice"
+QWEN_VOICE_DESIGN_REPO="Qwen/Qwen3-TTS-12Hz-1.7B-VoiceDesign"
+QWEN_TOKENIZER_REPO="Qwen/Qwen3-TTS-Tokenizer-12Hz"
 
 # ------------------------------------------------------------------------------
 # 1) Activate venv
@@ -60,9 +62,11 @@ try:
     print('torch:', torch.__version__)
     print('torch.version.cuda:', torch.version.cuda)
     print('cuda_available:', torch.cuda.is_available())
+    if not torch.cuda.is_available():
+        raise RuntimeError("CUDA is required for this GPU-only Qwen node, but torch.cuda.is_available() is false.")
 except Exception as exc:
     print('torch check failed:', exc)
-    sys.exit(0)
+    sys.exit(1)
 PY
 
 # ------------------------------------------------------------------------------
@@ -87,8 +91,24 @@ sudo apt-get install -y --no-install-recommends \
 echo "[qwen-voice] Upgrading pip toolchain safely"
 python -m pip install --upgrade "pip<27" "setuptools>=70,<82" "wheel<0.48"
 
-echo "[qwen-voice] Installing Qwen TTS runtime and support packages"
-python -m pip install -U qwen-tts soundfile transformers accelerate ninja packaging
+echo "[qwen-voice] Disabling TensorFlow for Transformers"
+export TRANSFORMERS_NO_TF=1
+export USE_TF=0
+python -m pip uninstall -y \
+  tensorflow \
+  tensorflow-cpu \
+  tensorflow-gpu \
+  tensorflow-intel \
+  tensorflow-io-gcs-filesystem || true
+
+echo "[qwen-voice] Installing pinned Qwen TTS runtime packages"
+python -m pip install -U \
+  "qwen-tts==0.1.1" \
+  "transformers==4.57.3" \
+  "accelerate==1.12.0" \
+  soundfile \
+  ninja \
+  packaging
 
 echo "[qwen-voice] Note: torch is expected to already be installed in /venv/main with a host-compatible CUDA build."
 echo "[qwen-voice] If CUDA is unavailable, update the NVIDIA driver or reinstall PyTorch with a compatible CUDA version."
@@ -124,10 +144,11 @@ export HUGGINGFACE_HUB_CACHE=/workspace/hf
 export TRANSFORMERS_NO_TF=1
 export USE_TF=0
 export QWEN_REMOTE_DEVICE=cuda
-export QWEN_REMOTE_DTYPE=float16
-export QWEN_REMOTE_MODEL_DIR_BASE=/workspace/models/Qwen3-TTS-12Hz-1.7B-Base
-export QWEN_REMOTE_MODEL_DIR_CUSTOM_VOICE=/workspace/models/Qwen3-TTS-12Hz-1.7B-CustomVoice
-export QWEN_REMOTE_MODEL_DIR_VOICE_DESIGN=/workspace/models/Qwen3-TTS-12Hz-1.7B-VoiceDesign
+export QWEN_REMOTE_DTYPE=bfloat16
+export QWEN_REMOTE_ATTN_IMPLEMENTATION=flash_attention_2
+export QWEN_REMOTE_MODEL_DIR_BASE=Qwen/Qwen3-TTS-12Hz-1.7B-Base
+export QWEN_REMOTE_MODEL_DIR_CUSTOM_VOICE=Qwen/Qwen3-TTS-12Hz-1.7B-CustomVoice
+export QWEN_REMOTE_MODEL_DIR_VOICE_DESIGN=Qwen/Qwen3-TTS-12Hz-1.7B-VoiceDesign
 EOF
 chmod 644 /etc/profile.d/qwen_remote.sh
 echo "[qwen-voice] Persisted Qwen runtime env to /etc/profile.d/qwen_remote.sh"
@@ -142,36 +163,11 @@ fi
 # ------------------------------------------------------------------------------
 # 5) Download models (idempotent)
 # ------------------------------------------------------------------------------
-# VOICE_DESIGN_MODEL_ID="Qwen/Qwen3-TTS-12Hz-1.7B-VoiceDesign"
-# CUSTOM_VOICE_MODEL_ID="Qwen/Qwen3-TTS-12Hz-1.7B-CustomVoice"
-VOICE_CLONE_MODEL_ID="Qwen/Qwen3-TTS-12Hz-1.7B-Base"
-MODELS_DIR="${WORKSPACE}/models"
-# VOICE_DESIGN_MODEL_DIR="${MODELS_DIR}/Qwen3-TTS-12Hz-1.7B-VoiceDesign"
-# CUSTOM_VOICE_MODEL_DIR="${MODELS_DIR}/Qwen3-TTS-12Hz-1.7B-CustomVoice"
-VOICE_CLONE_MODEL_DIR="${MODELS_DIR}/Qwen3-TTS-12Hz-1.7B-Base"
-
-mkdir -p "$MODELS_DIR"
-
-download_if_missing() {
-  local repo_id="$1"
-  local out_dir="$2"
-  local marker="$3"
-
-  if [ -f "$marker" ]; then
-    echo "[qwen-voice] Already downloaded: $repo_id"
-    return 0
-  fi
-
-  echo "[qwen-voice] Downloading $repo_id"
-  mkdir -p "$out_dir"
-  hf download "$repo_id" --local-dir "$out_dir"
-  echo "$repo_id" > "$marker"
-}
-
-# Clone-only provisioning by default:
-# download_if_missing "$VOICE_DESIGN_MODEL_ID" "$VOICE_DESIGN_MODEL_DIR" "${VOICE_DESIGN_MODEL_DIR}/.download_ok"
-# download_if_missing "$CUSTOM_VOICE_MODEL_ID" "$CUSTOM_VOICE_MODEL_DIR" "${CUSTOM_VOICE_MODEL_DIR}/.download_ok"
-download_if_missing "$VOICE_CLONE_MODEL_ID" "$VOICE_CLONE_MODEL_DIR" "${VOICE_CLONE_MODEL_DIR}/.download_ok"
+echo "[qwen-voice] Warming Hugging Face cache for Qwen3-TTS models"
+hf download "$QWEN_TOKENIZER_REPO" --cache-dir "$HF_HOME"
+hf download "$QWEN_BASE_REPO" --cache-dir "$HF_HOME"
+hf download "$QWEN_CUSTOM_REPO" --cache-dir "$HF_HOME"
+hf download "$QWEN_VOICE_DESIGN_REPO" --cache-dir "$HF_HOME"
 
 # ------------------------------------------------------------------------------
 # 6) Smoke test
@@ -184,6 +180,11 @@ print("torch:", torch.__version__)
 print("cuda_available:", torch.cuda.is_available())
 if torch.cuda.is_available():
     print("gpu:", torch.cuda.get_device_name(0))
+else:
+    raise RuntimeError("CUDA is required for qwen_voice.sh smoke test.")
+
+import soundfile as sf
+print("soundfile import: ok", sf.__version__)
 
 from qwen_tts import Qwen3TTSModel
 print("qwen_tts import: ok")
@@ -191,37 +192,19 @@ print("voice_clone_model:", "Qwen/Qwen3-TTS-12Hz-1.7B-Base")
 print("smoke_test: ok")
 PY
 
-if [ -f "/workspace/reference_voice.wav" ]; then
-  echo "[qwen-voice] Running real VoiceClone audio smoke test"
-  python - <<'PY'
-import os
+echo "[qwen-voice] Running GPU model-load smoke test"
+python - <<'PY'
 import torch
-import soundfile as sf
 from qwen_tts import Qwen3TTSModel
 
-device = "cuda" if torch.cuda.is_available() else "cpu"
-dtype = torch.float16 if device == "cuda" else torch.float32
-attn = "sdpa" if device == "cuda" else "eager"
 model = Qwen3TTSModel.from_pretrained(
-    "/workspace/models/Qwen3-TTS-12Hz-1.7B-Base",
-    device_map=device,
-    dtype=dtype,
-    attn_implementation=attn,
+    "Qwen/Qwen3-TTS-12Hz-1.7B-Base",
+    device_map="cuda:0",
+    dtype=torch.bfloat16,
+    attn_implementation="flash_attention_2",
 )
-wavs, sr = model.generate_voice_clone(
-    text="Hola, esta es una prueba de clonacion de voz con Qwen TTS.",
-    ref_audio="/workspace/reference_voice.wav",
-    ref_text="Texto de referencia que corresponde al audio de muestra.",
-    language="Spanish",
-    non_streaming_mode=True,
-)
-out_path = "/workspace/qwen_voice_clone_test.wav"
-sf.write(out_path, wavs[0], sr)
-print("voice_clone_smoke:", out_path, os.path.getsize(out_path))
+print("model_load_smoke: ok", type(model).__name__)
 PY
-else
-  echo "[qwen-voice] VoiceClone smoke test skipped: /workspace/reference_voice.wav not found"
-fi
 
 touch "${WORKSPACE}/logs/qwen_voice_ready.ok"
 echo "[qwen-voice] Ready marker written to ${WORKSPACE}/logs/qwen_voice_ready.ok"
@@ -245,9 +228,10 @@ echo "  import torch"
 echo "  import soundfile as sf"
 echo "  from qwen_tts import Qwen3TTSModel"
 echo "  model = Qwen3TTSModel.from_pretrained("
-echo "      '/workspace/models/Qwen3-TTS-12Hz-1.7B-Base',"
+echo "      'Qwen/Qwen3-TTS-12Hz-1.7B-Base',"
 echo "      device_map='cuda:0',"
-echo "      dtype=torch.float16,"
+echo "      dtype=torch.bfloat16,"
+echo "      attn_implementation='flash_attention_2',"
 echo "  )"
 echo "  wavs, sr = model.generate_voice_clone("
 echo "      text='Hola, esta es una prueba de clonacion de voz con Qwen TTS.',"
