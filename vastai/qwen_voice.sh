@@ -110,6 +110,15 @@ python -m pip install -U \
   ninja \
   packaging
 
+echo "[qwen-voice] Verifying critical Python imports after install"
+python - <<'PY'
+import soundfile as sf
+print("soundfile_post_install:", sf.__version__)
+
+from qwen_tts import Qwen3TTSModel
+print("qwen_tts_post_install: ok", Qwen3TTSModel.__name__)
+PY
+
 echo "[qwen-voice] Note: torch is expected to already be installed in /venv/main with a host-compatible CUDA build."
 echo "[qwen-voice] If CUDA is unavailable, update the NVIDIA driver or reinstall PyTorch with a compatible CUDA version."
 
